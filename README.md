@@ -16,7 +16,7 @@ O sistema recebe, armazena e processa dados microclimáticos recolhidos no terre
 - **Frontend:** Blade, TailwindCSS, Chart.js, Leaflet.js
 
 ## 🚀 Instalação Local
-1. `git clone <url-do-repo>`
+1. `git clone https://github.com/Nimorum/forest-monitor-backend.git`
 2. `composer install` e `npm install && npm run build`
 3. Copiar `.env.example` para `.env` e configurar a BD.
 4. `php artisan key:generate`
