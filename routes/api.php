@@ -2,7 +2,42 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\NodeController;
+use App\Http\Controllers\TelemetryController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+/*
+|--------------------------------------------------------------------------
+| ROTAS PÚBLICAS (Não precisam de Token)
+|--------------------------------------------------------------------------
+*/
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+/*
+|--------------------------------------------------------------------------
+| ZONA DO DASHBOARD (Apenas o token do Administrador pode entrar)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'ability:dashboard'])->group(function () {
+    Route::post('/create-gateway-token', [AuthController::class, 'createGatewayToken']);
+    Route::get('/tokens', [AuthController::class, 'listGatewayTokens']);
+    Route::delete('/tokens/{tokenId}', [AuthController::class, 'revokeGatewayToken']);
+
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| ZONA DO HARDWARE (Apenas as API Keys dos ESP32 podem entrar)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'ability:sensor:write'])->group(function () {
+    Route::post('/nodes/register', [NodeController::class, 'registerNode']);
+    Route::post('/telemetry', [TelemetryController::class, 'logData']);
+
+});
