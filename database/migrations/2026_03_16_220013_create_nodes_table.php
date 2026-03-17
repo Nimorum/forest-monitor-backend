@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('nodes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('mac_address')->unique();
             $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();

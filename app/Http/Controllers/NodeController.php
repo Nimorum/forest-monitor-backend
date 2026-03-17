@@ -18,6 +18,7 @@ class NodeController extends Controller
         $node = Node::updateOrCreate(
             ['mac_address' => $validated['mac_address']],
             [
+                'user_id' => $request->user()->id,
                 'latitude' => $validated['latitude'] ?? null,
                 'longitude' => $validated['longitude'] ?? null,
             ]

@@ -10,11 +10,17 @@ class Node extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'mac_address',
         'latitude',
         'longitude',
         'is_public',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function telemetries()
     {
