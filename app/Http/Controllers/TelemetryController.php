@@ -35,4 +35,49 @@ class TelemetryController extends Controller
             'data' => $telemetry
         ], 201);
     }
+
+    public function getTelemetryHistory(Request $request, $id)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $node = \App\Models\Node::findOrFail($id);
+
+        $user = auth('sanctum')->user();
+
+        if (!$node->is_public) {
+            if (!$user || $user->id !== $node->user_id) {
+                return response()->json([
+                    'message' => 'You do not have permission to access telemetry data for this node.'
+                ], 403);
+            }
+        }
+        $start = \Carbon\Carbon::parse($request->start_date);
+        $end = \Carbon\Carbon::parse($request->end_date);
+
+        $telemetries = $node->telemetries()
+            ->whereBetween('created_at', [$start, $end])
+            ->orderBy('created_at', 'asc')
+            ->get([
+                'temperature', 
+                'humidity', 
+                'wind_speed', 
+                'soil_moisture', 
+                'vbat', 
+                'created_at'
+            ]);
+
+        return response()->json([
+            'node_id' => $node->id,
+            'mac_address' => $node->mac_address,
+            'period' => [
+                'start' => $start->toIso8601String(),
+                'end' => $end->toIso8601String(),
+            ],
+            'total_records' => $telemetries->count(),
+            'data' => $telemetries
+        ]);
+    }
 }

@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\NodeController;
 use App\Http\Controllers\TelemetryController;
+use App\Http\Controllers\MapController;
+use App\Http\Controllers\AlarmController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +15,10 @@ use App\Http\Controllers\TelemetryController;
 */
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/map-data', [MapController::class, 'getMapData']);
+Route::get('/nodes-history', [MapController::class, 'getNodesHistoryAtTime']);
+Route::get('/nodes/{id}/telemetry', [TelemetryController::class, 'getTelemetryHistory']);
+
 
 /*
 |--------------------------------------------------------------------------
@@ -23,6 +29,8 @@ Route::middleware(['auth:sanctum', 'ability:dashboard'])->group(function () {
     Route::post('/create-gateway-token', [AuthController::class, 'createGatewayToken']);
     Route::get('/tokens', [AuthController::class, 'listGatewayTokens']);
     Route::delete('/tokens/{tokenId}', [AuthController::class, 'revokeGatewayToken']);
+    Route::get('/alarms', [AlarmController::class, 'checkAndGetAlarms']);
+    Route::patch('/alarms/{id}/resolve', [AlarmController::class, 'resolveAlarm']);
 
     Route::get('/user', function (Request $request) {
         return $request->user();
