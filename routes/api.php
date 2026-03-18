@@ -31,11 +31,9 @@ Route::middleware(['auth:sanctum', 'ability:dashboard'])->group(function () {
     Route::delete('/tokens/{tokenId}', [AuthController::class, 'revokeGatewayToken']);
     Route::get('/alarms', [AlarmController::class, 'checkAndGetAlarms']);
     Route::patch('/alarms/{id}/resolve', [AlarmController::class, 'resolveAlarm']);
-
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-
 });
 
 
@@ -47,5 +45,4 @@ Route::middleware(['auth:sanctum', 'ability:dashboard'])->group(function () {
 Route::middleware(['auth:sanctum', 'ability:sensor:write'])->group(function () {
     Route::post('/nodes/register', [NodeController::class, 'registerNode']);
     Route::post('/telemetry', [TelemetryController::class, 'logData']);
-
 });
