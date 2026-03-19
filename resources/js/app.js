@@ -1,8 +1,16 @@
 import './bootstrap';
+import { eventBus } from './events';
+import { MapController } from './map';
+import { DashboardController } from './dashboard';
+import { AuthController } from './auth';
+import { NavbarController } from './navbar';
+
 document.addEventListener('DOMContentLoaded', () => {
-    const app = document.getElementById('app');
-    
-    if (app) {
-        app.innerHTML = '<h1>Frontend System Initialized</h1><p>Ready to load the map...</p>';
-    }
+    // 1. Initialize our controllers (they will automatically subscribe to events)
+    new NavbarController();
+    new MapController();
+    new DashboardController();
+    new AuthController();
+
+    eventBus.publish('view:changed', 'map');
 });

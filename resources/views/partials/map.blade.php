@@ -1,0 +1,1 @@
+<div id="map-view" class="w-100 h-100"></div>
