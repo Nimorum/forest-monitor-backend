@@ -1,4 +1,5 @@
 import { eventBus } from './events';
+import { ApiClient } from './api';
 
 export class AuthController {
     constructor() {
@@ -47,22 +48,19 @@ export class AuthController {
         const password = document.getElementById('login-password').value;
 
         try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ email, password })
-            });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Invalid credentials.');
-            }
-
-            this.processSuccessfulAuth(data.token, 'loginModal');
+            ApiClient.post('/login', { email, password })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.token) {
+                        this.processSuccessfulAuth(data.token, 'loginModal');
+                    } else {
+                        throw new Error(data.message || 'Invalid credentials.');
+                    }
+                })
+                .catch(error => {
+                    this.showAlert(this.loginAlert, error.message);
+                });
 
         } catch (error) {
             this.showAlert(this.loginAlert, error.message);
@@ -76,43 +74,43 @@ export class AuthController {
         const name = document.getElementById('register-name').value;
         const email = document.getElementById('register-email').value;
         const password = document.getElementById('register-password').value;
+        ApiClient.post('/register', { name, email, password })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    // open login modal after successful registration
+                    const loginModalElement = document.getElementById('loginModal');
+                    const loginModal = new bootstrap.Modal(loginModalElement);
+                    loginModal.show();
 
-        try {
-            const response = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ name, email, password })
+                    this.registerForm.reset();
+                    const registerModalElement = document.getElementById('registerModal');
+                    const registerModalInstance = bootstrap.Modal.getInstance(registerModalElement);
+                    if (registerModalInstance) {
+                        registerModalInstance.hide();
+                    }
+                } else {
+                    throw new Error(data.message || 'Registration failed.');
+                }
+            })
+            .catch(error => {
+                this.showAlert(this.registerAlert, error.message);
             });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Registration failed.');
-            }
-
-            this.processSuccessfulAuth(data.token, 'registerModal');
-
-        } catch (error) {
-            this.showAlert(this.registerAlert, error.message);
-        }
     }
 
-    async handleLogout() {
-        const token = localStorage.getItem('auth_token');
-        
-        if (token) {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-        }
+    handleLogout() {
 
+        ApiClient.post('/logout')
+            .then(() => {
+                this.clearAuthState();
+            })
+            .catch(() => {
+                // Even if logout request fails, clear local auth state
+                this.clearAuthState();
+            });
+    }
+
+    clearAuthState() {
         localStorage.removeItem('auth_token');
         eventBus.publish('auth:logout', {});
         eventBus.publish('view:changed', 'map');

@@ -94,4 +94,13 @@ class AuthController extends Controller
             'message' => 'Gateway token revoked successfully!'
         ]);
     }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logged out successfully!'
+        ]);
+    }
 }

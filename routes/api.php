@@ -31,6 +31,7 @@ Route::middleware(['auth:sanctum', 'ability:dashboard'])->group(function () {
     Route::delete('/tokens/{tokenId}', [AuthController::class, 'revokeGatewayToken']);
     Route::get('/alarms', [AlarmController::class, 'checkAndGetAlarms']);
     Route::patch('/alarms/{id}/resolve', [AlarmController::class, 'resolveAlarm']);
+    Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {
         return $request->user();
     });

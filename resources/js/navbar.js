@@ -3,7 +3,6 @@ import { eventBus } from './events';
 export class NavbarController {
     constructor() {
         this.navMap = document.getElementById('nav-map');
-        this.navDashboard = document.getElementById('nav-dashboard');
         this.navItemDashboard = document.getElementById('nav-item-dashboard');
         
         this.btnLogin = document.getElementById('btn-show-login');
@@ -21,8 +20,8 @@ export class NavbarController {
             });
         }
 
-        if (this.navDashboard) {
-            this.navDashboard.addEventListener('click', (e) => {
+        if (this.navItemDashboard) {
+            this.navItemDashboard.addEventListener('click', (e) => {
                 e.preventDefault();
                 eventBus.publish('view:changed', 'dashboard');
             });
