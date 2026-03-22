@@ -42,6 +42,7 @@ class MapController extends Controller
                     'node_id' => $node->id,
                     'mac_address' => $node->mac_address,
                     'temperature' => $node->latestTelemetry ? $node->latestTelemetry->temperature : null,
+                    'wind_speed' => $node->latestTelemetry ? $node->latestTelemetry->wind_speed : null,
                     'humidity' => $node->latestTelemetry ? $node->latestTelemetry->humidity : null,
                     'soil_moisture' => $node->latestTelemetry ? $node->latestTelemetry->soil_moisture : null,
                     'vbat' => $node->latestTelemetry ? $node->latestTelemetry->vbat : null,
@@ -93,6 +94,7 @@ class MapController extends Controller
                     'temperature' => $telemetry->temperature,
                     'humidity' => $telemetry->humidity,
                     'soil_moisture' => $telemetry->soil_moisture,
+                    'wind_speed' => $telemetry->wind_speed,
                     'vbat' => $telemetry->vbat,
                     'recorded_at' => $telemetry->created_at->toIso8601String(),
                 ];
