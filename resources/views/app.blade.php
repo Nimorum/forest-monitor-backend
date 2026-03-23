@@ -16,14 +16,13 @@
     <main class="w-100 position-relative" style="height: calc(100vh - 56px);">
         
         @include('partials.map')
-
         @include('partials.dashboard')
-
+        @include('partials.modals')
+        @include('partials.history-modal')
+        @include('partials.alarms')
 
     </main>
-
-    @include('partials.modals')
-    @include('partials.history-modal')
+    
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Alarm;
 
 class AlarmController extends Controller
 {
@@ -31,14 +32,14 @@ class AlarmController extends Controller
             }
 
             // Risk Threshold: Temp > 35 AND Humidity < 30
-            if ($telemetry->temperature >= 35.0 && $telemetry->humidity <= 30.0) {
+            if ($telemetry->temperature >= 35.0 && $telemetry->humidity <= 30.0 && $telemetry->wind_speed >= 20.0) {
                 Alarm::firstOrCreate([
                     'node_id' => $node->id,
                     'type' => 'fire_risk',
                     'resolved_at' => null,
                 ], [
                     'user_id' => $user->id,
-                    'message' => "High fire risk detected. Temp: {$telemetry->temperature}°C, Hum: {$telemetry->humidity}%",
+                    'message' => "High fire risk detected. Temp: {$telemetry->temperature}°C, Hum: {$telemetry->humidity}%, Wind: {$telemetry->wind_speed} m/s",
                 ]);
             }
         }
