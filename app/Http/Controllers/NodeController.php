@@ -29,4 +29,47 @@ class NodeController extends Controller
             'node' => $node
         ], $node->wasRecentlyCreated ? 201 : 200);
     }
-}
+
+    public function getMyNodes(Request $request)
+    {
+        $user = $request->user();
+        $groupedData = [];
+
+        $groups = \App\Models\NodeGroup::where('user_id', $user->id)
+            ->with(['nodes.latestTelemetry'])
+            ->get();
+
+        foreach ($groups as $group) {
+            $groupedData[$group->name] = $group->nodes->map(function ($node) {
+                return [
+                    'id' => $node->id,
+                    'mac_address' => $node->mac_address,
+                    'created_at' => $node->created_at,
+                    'latest_telemetry' => $node->latestTelemetry,
+                ];
+            });
+        }
+
+        $unassignedNodes = $user->nodes()
+            ->doesntHave('groups')
+            ->with('latestTelemetry')
+            ->get();
+
+        if ($unassignedNodes->isNotEmpty()) {
+            $groupedData['Unassigned Area'] = $unassignedNodes->map(function ($node) {
+                return [
+                    'id' => $node->id,
+                    'mac_address' => $node->mac_address,
+                    'created_at' => $node->created_at,
+                    'latest_telemetry' => $node->latestTelemetry,
+                ];
+            });
+        }
+
+        return response()->json([
+            'message' => 'Nodes retrieved and grouped successfully.',
+            'data' => $groupedData 
+        ]);
+    }
+
+}    

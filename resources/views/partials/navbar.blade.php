@@ -14,8 +14,14 @@
                     <a class="nav-link" href="#" id="nav-item-dashboard">Dashboard</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" id="nav-nodes" href="#">
+                        <i class="bi bi-cpu"></i> Nodes
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link d-flex align-items-center gap-2" id="nav-alarms" href="#">
                         Alarms <span id="alarm-badge" class="badge bg-danger rounded-pill d-none">0</span>
+                    </a>
                 </li>
             </ul>
 

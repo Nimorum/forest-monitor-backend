@@ -31,4 +31,9 @@ class Node extends Model
     {
         return $this->hasOne(Telemetry::class)->latestOfMany();
     }
+
+    public function groups()
+    {
+        return $this->belongsToMany(NodeGroup::class);
+    }
 }

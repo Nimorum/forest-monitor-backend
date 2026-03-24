@@ -105,6 +105,74 @@ h2 {
     animation: pulse-red 1s infinite;
 }
 
+.chevron-icon {
+    transition: transform 0.3s ease;
+}
+.chevron-icon.open {
+    transform: rotate(180deg);
+}
+
+/* Default: Ocultar as views específicas até sabermos o tamanho do ecrã */
+.nodes-card-list, .nodes-table-container {
+    display: none;
+}
+
+/* 1. Estilos para Mobile (Cards e Floating Toolbar) */
+@media (max-width: 767px) {
+    .nodes-card-list {
+        display: block; /* Mostra a lista de cartões em mobile */
+    }
+
+    .node-card {
+        transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+    
+    .node-card.selected {
+        border-color: #0d6efd !important; /* Borda azul do Bootstrap se selecionado */
+        background-color: rgba(13, 110, 253, 0.05) !important;
+    }
+
+    .node-checkbox {
+        width: 1.5rem; /* Checkbox maior para touch */
+        height: 1.5rem;
+    }
+
+    /* Toolbar inferior flutuante para bulk actions em mobile */
+    #nodes-toolbar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        margin-bottom: 0;
+        border-radius: 0;
+        z-index: 1050; /* Garante que fica por cima de tudo */
+        flex-direction: column !important; /* Stack vertical */
+        gap: 10px;
+        padding: 15px;
+    }
+
+    #nodes-toolbar .d-flex {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    #bulk-move-select {
+        flex-grow: 1; /* Select box ocupa o espaço todo */
+    }
+    
+    /* Espaço extra no fundo da view para a toolbar não tapar o último cartão */
+    #nodes-view {
+        padding-bottom: 120px;
+    }
+}
+
+/* 2. Estilos para Desktop (Tabela) */
+@media (min-width: 768px) {
+    .nodes-table-container {
+        display: block; /* Mostra a tabela em desktop */
+    }
+}
+
 @keyframes pulse-green {
     0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
     70% { box-shadow: 0 0 0 15px rgba(25, 135, 84, 0); }
