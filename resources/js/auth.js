@@ -30,13 +30,13 @@ export class AuthController {
 
     checkInitialState() {
         const token = localStorage.getItem('auth_token');
-        console.log('Checking initial auth state. Token found:', !!token);
+        
         if (token) {
+            window.isAuthenticated = true;
             eventBus.publish('auth:success', {});
-            console.log('Initial auth state: User is authenticated.');
         } else {
+            window.isAuthenticated = false;
             eventBus.publish('auth:logout', {});
-            console.log('Initial auth state: User is not authenticated.');
         }
     }
 
@@ -112,13 +112,14 @@ export class AuthController {
 
     clearAuthState() {
         localStorage.removeItem('auth_token');
+        window.isAuthenticated = false;
         eventBus.publish('auth:logout', {});
         eventBus.publish('view:changed', 'map');
     }
 
     processSuccessfulAuth(token, modalId) {
         localStorage.setItem('auth_token', token);
-        
+        window.isAuthenticated = true;
         const modalElement = document.getElementById(modalId);
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) {

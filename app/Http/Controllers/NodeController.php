@@ -85,4 +85,12 @@ class NodeController extends Controller
         return response()->json(['message' => 'Node deleted successfully.']);
     }
 
+    public function getGroups(\App\Models\Node $node)
+    {
+        if ($node->user_id !== \Illuminate\Support\Facades\Auth::id()) {
+            abort(403);
+        }
+        return response()->json($node->groups);
+    }
+
 }    

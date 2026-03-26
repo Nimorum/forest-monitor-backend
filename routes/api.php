@@ -27,17 +27,23 @@ Route::get('/nodes/{id}/telemetry', [TelemetryController::class, 'getTelemetryHi
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'ability:dashboard'])->group(function () {
+
     Route::post('/node-groups', [NodeGroupController::class, 'store']);
     Route::delete('/node-groups/{nodeGroup}', [NodeGroupController::class, 'destroy']);
     Route::post('/node-groups/{nodeGroup}/nodes', [NodeGroupController::class, 'assignNodes']);
     Route::get('/node-groups', [NodeGroupController::class, 'index']);
+
     Route::post('/create-gateway-token', [AuthController::class, 'createGatewayToken']);
     Route::get('/tokens', [AuthController::class, 'listGatewayTokens']);
     Route::delete('/tokens/{tokenId}', [AuthController::class, 'revokeGatewayToken']);
+
     Route::get('/alarms', [AlarmController::class, 'checkAndGetAlarms']);
     Route::patch('/alarms/{id}/resolve', [AlarmController::class, 'resolveAlarm']);
-    Route::post('/logout', [AuthController::class, 'logout']);
+
     Route::get('/my-nodes', [NodeController::class, 'getMyNodes']);
+    Route::get('/nodes/{node}/groups', [NodeController::class, 'getGroups']);
+
+    Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {
         return $request->user();
     });

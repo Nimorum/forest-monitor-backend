@@ -275,7 +275,12 @@ export class MapController {
                             ${new Date(props.last_update).toLocaleString()}
                         </div>
                     ` : '<div class="small text-muted text-center py-2">Awaiting first payload</div>'}
-                    <button class="btn btn-sm btn-outline-primary w-100 mt-2 btn-history" data-id="${props.node_id}">View History</button>
+                    
+                    ${window.isAuthenticated ? `
+                        <button class="btn btn-sm btn-outline-primary w-100 mt-2 btn-history" data-id="${props.node_id}" data-id="${props.node_id}">
+                            Manage
+                        </button>
+                    ` : ''}
                 </div>
             `;
 
