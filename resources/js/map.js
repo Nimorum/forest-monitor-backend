@@ -253,7 +253,7 @@ export class MapController {
                 iconSize: [24, 24],
                 iconAnchor: [12, 12]
             });
-
+            //TODO:ver wind_speed metric;
             const popupContent = `
                 <div class="text-dark p-1" style="min-width: 150px;">
                     <h6 class="mb-1 fw-bold border-bottom pb-1">${props.mac_address}</h6>
@@ -264,6 +264,9 @@ export class MapController {
                         </div>
                         <div class="small d-flex justify-content-between mb-1">
                             <span>💧 Hum:</span> <strong>${props.humidity}%</strong>
+                        </div>
+                        <div class="small d-flex justify-content-between mb-1">
+                            <span>💨 Wind:</span> <strong>${props.wind_speed}m/s</strong>
                         </div>
                         <div class="small d-flex justify-content-between mb-2">
                             <span>🔋 Bat:</span> <strong>${props.vbat}V</strong>

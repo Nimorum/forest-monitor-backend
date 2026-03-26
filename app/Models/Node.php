@@ -34,6 +34,6 @@ class Node extends Model
 
     public function groups()
     {
-        return $this->belongsToMany(NodeGroup::class);
+        return $this->belongsToMany(NodeGroup::class)->withTimestamps();
     }
 }

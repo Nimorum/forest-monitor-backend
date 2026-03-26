@@ -15,6 +15,6 @@ class NodeGroup extends Model
 
     public function nodes()
     {
-        return $this->belongsToMany(Node::class);
+        return $this->belongsToMany(Node::class)->withTimestamps();
     }
 }

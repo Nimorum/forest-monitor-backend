@@ -67,34 +67,81 @@ export class NodesController {
 
         const btnCreateGroup = document.getElementById('btn-create-group');
         if (btnCreateGroup) {
-            btnCreateGroup.addEventListener('click', () => {
+            btnCreateGroup.addEventListener('click', async () => {
                 const groupName = prompt("Enter the new group name:");
                 if (groupName) {
-                    console.log(`🚀 CREATE GROUP: ${groupName}`);
-                    // Futuro: ApiClient.post('/groups', { name: groupName })
+                    try {
+                        const response = await ApiClient.post('/node-groups', { name: groupName });
+                        if (!response.ok) throw new Error('Request failed');
+                        
+                        alert('Group created successfully!');
+                        this.loadGroupsForDropdown();
+                        this.loadNodes();
+                    } catch (error) {
+                        alert('Error creating group.');
+                        console.error(error);
+                    }
                 }
             });
         }
 
         const btnDeleteGroup = document.getElementById('btn-delete-group');
         if (btnDeleteGroup) {
-            btnDeleteGroup.addEventListener('click', () => {
-                const groupName = prompt("Enter the EXACT name of the group to delete:");
-                if (groupName) {
-                    console.log(`🚀 DELETE GROUP: ${groupName}`);
+            btnDeleteGroup.addEventListener('click', async () => {
+                const targetGroupId = document.getElementById('bulk-move-select').value;
+                if (!targetGroupId) return alert("Please select a group from the dropdown first to delete it.");
+
+                if (confirm(`Are you sure you want to delete this group? The nodes will NOT be deleted, just unassigned.`)) {
+                    try {
+                        const response = await ApiClient.delete(`/node-groups/${targetGroupId}`);
+                        if (!response.ok) throw new Error('Request failed');
+
+                        alert('Group deleted successfully!');
+                        this.loadGroupsForDropdown(); 
+                        this.loadNodes();
+                    } catch (error) {
+                        alert('Error deleting group.');
+                        console.error(error);
+                    }
                 }
             });
         }
 
-        const btnBulkMove = document.getElementById('btn-bulk-move');
-        if (btnBulkMove) {
-            btnBulkMove.addEventListener('click', () => {
-                const targetGroup = document.getElementById('bulk-move-select').value;
-                if (!targetGroup) return alert("Please select a target group from the dropdown.");
+        const handleBulkTransfer = async (isMove) => {
+            const targetGroupId = document.getElementById('bulk-move-select').value;
+            if (!targetGroupId) return alert("Please select a target group from the dropdown.");
 
-                const selectedIds = Array.from(document.querySelectorAll('.node-checkbox:checked')).map(cb => cb.value);
-                console.log(`🚀 MOVE NODES: [${selectedIds.join(', ')}] TO GROUP: ${targetGroup}`);
-            });
+            const selectedIds = Array.from(document.querySelectorAll('.node-checkbox:checked')).map(cb => cb.value);
+            const actionText = isMove ? 'moved' : 'added';
+            
+            try {
+
+                const response = await ApiClient.post(`/node-groups/${targetGroupId}/nodes`, { 
+                    node_ids: selectedIds,
+                    is_move: isMove
+                });
+                
+                if (!response.ok) throw new Error('Request failed');
+
+                alert(`Successfully ${actionText} ${selectedIds.length} nodes!`);
+                
+                document.querySelectorAll('.node-checkbox:checked').forEach(cb => cb.checked = false);
+                this.updateToolbarState();
+                this.loadNodes();
+            } catch (error) {
+                alert(`Error: Could not process the nodes.`);
+                console.error(error);
+            }
+        };
+
+        const btnBulkAdd = document.getElementById('btn-bulk-add');
+        if (btnBulkAdd) {
+            btnBulkAdd.addEventListener('click', () => handleBulkTransfer(false));
+        }
+
+        const btnBulkMoveBtn = document.getElementById('btn-bulk-move');
+        if (btnBulkMoveBtn) {
+            btnBulkMoveBtn.addEventListener('click', () => handleBulkTransfer(true));
         }
 
         const btnBulkDelete = document.getElementById('btn-bulk-delete');
@@ -113,6 +160,7 @@ export class NodesController {
         if (viewName === 'nodes') {
             this.container.classList.remove('d-none');
             this.navItem.classList.add('active');
+            this.loadGroupsForDropdown();
             this.loadNodes();
         } else {
             this.container.classList.add('d-none');
@@ -151,8 +199,13 @@ export class NodesController {
         document.getElementById('selected-count').textContent = `${count} selected`;
 
         const disableBulk = count === 0;
-        document.getElementById('btn-bulk-move').disabled = disableBulk;
-        document.getElementById('btn-bulk-delete').disabled = disableBulk;
+        const btnAdd = document.getElementById('btn-bulk-add');
+        const btnMove = document.getElementById('btn-bulk-move');
+        const btnDelete = document.getElementById('btn-bulk-delete');
+
+        if (btnAdd) btnAdd.disabled = disableBulk;
+        if (btnMove) btnMove.disabled = disableBulk;
+        if (btnDelete) btnDelete.disabled = disableBulk;
     }
 
     renderNodes(groupedNodes) {
@@ -163,14 +216,6 @@ export class NodesController {
         }
 
         document.getElementById('nodes-toolbar').classList.remove('d-none');
-
-        const moveSelect = document.getElementById('bulk-move-select');
-        moveSelect.innerHTML = '<option value="" selected disabled>Move selected to...</option>';
-        Object.keys(groupedNodes).forEach(groupName => {
-            if (groupName !== 'Unassigned Area') {
-                moveSelect.innerHTML += `<option value="${groupName}">${groupName}</option>`;
-            }
-        });
 
         let html = '';
         let index = 0;
@@ -196,7 +241,7 @@ export class NodesController {
                             </a>
                         </td>
                         <td><i class="bi bi-battery-full ${statusColor}"></i> ${battery}</td>
-                        <td class="text-muted small">${new Date(node.created_at).toLocaleDateString()}</td>
+                        <td class=" small">${new Date(node.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                     </tr>
                 `;
             }).join('');
@@ -238,5 +283,21 @@ export class NodesController {
 
         this.accordionContainer.innerHTML = html;
         this.updateToolbarState(); 
+    }
+
+    async loadGroupsForDropdown() {
+        try {
+            const response = await ApiClient.get('/node-groups');
+            const groups = await response.json();
+            
+            const moveSelect = document.getElementById('bulk-move-select');
+            moveSelect.innerHTML = '<option value="" selected disabled>Target group...</option>';
+            
+            groups.forEach(group => {
+                moveSelect.innerHTML += `<option value="${group.id}">${group.name}</option>`;
+            });
+        } catch (error) {
+            console.error(error);
+        }
     }
 }

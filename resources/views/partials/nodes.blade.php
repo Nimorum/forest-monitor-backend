@@ -11,7 +11,7 @@
 
     <div id="nodes-toolbar" class="d-flex justify-content-between align-items-center mb-4 p-3 bg-dark border border-secondary rounded d-none">
         <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-success" id="btn-create-group">
+            <button class="btn btn-sm btn-outline-light" id="btn-create-group">
                 <i class="bi bi-folder-plus"></i> Create Group
             </button>
             <button class="btn btn-sm btn-outline-danger" id="btn-delete-group">
@@ -23,12 +23,18 @@
             <span class="text-info small me-2 fw-bold" id="selected-count">0 selected</span>
             
             <select class="form-select form-select-sm bg-dark text-light border-secondary" id="bulk-move-select" style="width: auto;">
-                <option value="" selected disabled>Move selected to...</option>
+                <option value="" selected disabled>Target group...</option>
                 </select>
             
-            <button class="btn btn-sm btn-warning" id="btn-bulk-move" disabled>
-                Move
-            </button>
+            <div class="btn-group" role="group">
+                <button class="btn btn-sm btn-primary" id="btn-bulk-add" disabled title="Add to this group (Keep in current)">
+                    <i class="bi bi-plus-circle"></i> Add
+                </button>
+                <button class="btn btn-sm btn-warning" id="btn-bulk-move" disabled title="Move to this group (Remove from current)">
+                    <i class="bi bi-arrow-right-circle"></i> Move
+                </button>
+            </div>
+
             <button class="btn btn-sm btn-danger" id="btn-bulk-delete" disabled>
                 Delete Nodes
             </button>

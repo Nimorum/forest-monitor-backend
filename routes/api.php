@@ -7,6 +7,7 @@ use App\Http\Controllers\NodeController;
 use App\Http\Controllers\TelemetryController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\AlarmController;
+use App\Http\Controllers\NodeGroupController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +27,10 @@ Route::get('/nodes/{id}/telemetry', [TelemetryController::class, 'getTelemetryHi
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'ability:dashboard'])->group(function () {
+    Route::post('/node-groups', [NodeGroupController::class, 'store']);
+    Route::delete('/node-groups/{nodeGroup}', [NodeGroupController::class, 'destroy']);
+    Route::post('/node-groups/{nodeGroup}/nodes', [NodeGroupController::class, 'assignNodes']);
+    Route::get('/node-groups', [NodeGroupController::class, 'index']);
     Route::post('/create-gateway-token', [AuthController::class, 'createGatewayToken']);
     Route::get('/tokens', [AuthController::class, 'listGatewayTokens']);
     Route::delete('/tokens/{tokenId}', [AuthController::class, 'revokeGatewayToken']);
