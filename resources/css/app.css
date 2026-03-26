@@ -16,7 +16,7 @@ html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
     background-color: #121212;
 }
 
@@ -29,8 +29,29 @@ body {
     color: #e2e8f0;
 }
 
+@media (min-width: 992px) {
+
+    .navbar-expand-lg .navbar-collapse.collapse {
+        display: flex !important;
+        visibility: visible !important;
+        height: auto !important;
+    }
+}
+
+.navbar-collapse.collapse.show {
+    visibility: visible !important;
+    display: block !important;
+}
+
+@media (min-width: 992px) {
+    .navbar-collapse.collapse.show {
+        display: flex !important;
+    }
+}
+
 .navbar {
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     background: rgba(15, 23, 42, 0.8) !important;
     box-shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
@@ -38,10 +59,12 @@ body {
 .navbar-brand {
     font-weight: 600;
     letter-spacing: 0.5px;
+    flex-shrink: 0;
 }
 
 .nav-link {
     transition: 0.2s;
+    white-space: nowrap;
 }
 
 .nav-link:hover {
@@ -112,15 +135,13 @@ h2 {
     transform: rotate(180deg);
 }
 
-/* Default: Ocultar as views específicas até sabermos o tamanho do ecrã */
 .nodes-card-list, .nodes-table-container {
     display: none;
 }
 
-/* 1. Estilos para Mobile (Cards e Floating Toolbar) */
 @media (max-width: 767px) {
     .nodes-card-list {
-        display: block; /* Mostra a lista de cartões em mobile */
+        display: block; 
     }
 
     .node-card {
@@ -128,48 +149,54 @@ h2 {
     }
     
     .node-card.selected {
-        border-color: #0d6efd !important; /* Borda azul do Bootstrap se selecionado */
+        border-color: #0d6efd !important;
         background-color: rgba(13, 110, 253, 0.05) !important;
     }
 
     .node-checkbox {
-        width: 1.5rem; /* Checkbox maior para touch */
+        width: 1.5rem; 
         height: 1.5rem;
     }
 
-    /* Toolbar inferior flutuante para bulk actions em mobile */
     #nodes-toolbar {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        margin-bottom: 0;
-        border-radius: 0;
-        z-index: 1050; /* Garante que fica por cima de tudo */
-        flex-direction: column !important; /* Stack vertical */
-        gap: 10px;
-        padding: 15px;
+        position: sticky;
+        top: 0; 
+        z-index: 1040; 
+        flex-direction: column !important; 
+        padding: 12px;
+        background-color: #212529 !important;
+        border-bottom: 1px solid #495057;
     }
 
     #nodes-toolbar .d-flex {
         width: 100%;
-        justify-content: center;
+        flex-wrap: wrap; 
+        gap: 8px !important;
     }
-    
+
+    #nodes-toolbar .d-flex > button {
+        flex: 1 1 45%; 
+    }
+
     #bulk-move-select {
-        flex-grow: 1; /* Select box ocupa o espaço todo */
+        flex: 1 1 100%; 
+        margin: 5px 0;
+    }
+
+    #selected-count {
+        flex: 1 1 100%;
+        text-align: center;
+        margin-bottom: 4px;
     }
     
-    /* Espaço extra no fundo da view para a toolbar não tapar o último cartão */
-    #nodes-view {
-        padding-bottom: 120px;
+    #nodes-accordion {
+        padding-bottom: 150px !important; 
     }
 }
 
-/* 2. Estilos para Desktop (Tabela) */
 @media (min-width: 768px) {
     .nodes-table-container {
-        display: block; /* Mostra a tabela em desktop */
+        display: block;
     }
 }
 

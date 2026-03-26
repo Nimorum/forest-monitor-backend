@@ -72,4 +72,17 @@ class NodeController extends Controller
         ]);
     }
 
+    public function deleteNode(Request $request, $id)
+    {
+        $node = Node::where('id', $id)->where('user_id', $request->user()->id)->first();
+
+        if (!$node) {
+            return response()->json(['message' => 'Node not found or does not belong to the user.'], 404);
+        }
+
+        $node->delete();
+
+        return response()->json(['message' => 'Node deleted successfully.']);
+    }
+
 }    

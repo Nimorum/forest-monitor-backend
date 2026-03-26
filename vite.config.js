@@ -16,8 +16,8 @@ export default defineConfig({
         },
         host: '0.0.0.0', // Permite que o servidor oiça outras máquinas
         cors: true,
-        /*hmr: {
+        hmr: {
             host: '192.168.0.185', // FORÇA o Vite a injetar o teu IP real no HTML!
-        },*/
+        },
     },
 });

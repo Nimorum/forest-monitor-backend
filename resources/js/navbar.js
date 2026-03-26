@@ -45,6 +45,20 @@ export class NavbarController {
             });
         }
 
+        const navLinks = document.querySelectorAll('.nav-link');
+        const menuCollapse = document.getElementById('topNavbar');
+        const navbarToggler = document.querySelector('.navbar-toggler');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                const isMobileView = window.getComputedStyle(navbarToggler).display !== 'none';
+                if (isMobileView && menuCollapse.classList.contains('show')) {
+
+                    const bsCollapse = bootstrap.Collapse.getInstance(menuCollapse);
+                    if (bsCollapse) bsCollapse.hide();
+                }
+            });
+        });
 
         eventBus.subscribe('auth:success', () => this.setAuthenticatedState());
         eventBus.subscribe('auth:logout', () => this.setUnauthenticatedState());
