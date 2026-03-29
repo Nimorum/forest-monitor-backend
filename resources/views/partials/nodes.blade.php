@@ -21,6 +21,15 @@
         
         <div class="d-flex gap-2 align-items-center">
             <span class="text-info small me-2 fw-bold" id="selected-count">0 selected</span>
+
+            <div class="btn-group me-2" role="group">
+                <button class="btn btn-sm btn-success" id="btn-bulk-public" disabled title="Make Public">
+                    <i class="bi bi-eye"></i> Public
+                </button>
+                <button class="btn btn-sm btn-secondary" id="btn-bulk-private" disabled title="Make Private">
+                    <i class="bi bi-eye-slash"></i> Private
+                </button>
+            </div>
             
             <select class="form-select form-select-sm bg-dark text-light border-secondary" id="bulk-move-select" style="width: auto;">
                 <option value="" selected disabled>Target group...</option>

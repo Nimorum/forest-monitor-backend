@@ -107,41 +107,14 @@ export class NodesController {
             });
         }
 
-        const handleBulkTransfer = async (isMove) => {
-            const targetGroupId = document.getElementById('bulk-move-select').value;
-            if (!targetGroupId) return alert("Please select a target group from the dropdown.");
-
-            const selectedIds = Array.from(document.querySelectorAll('.node-checkbox:checked')).map(cb => cb.value);
-            const actionText = isMove ? 'moved' : 'added';
-            
-            try {
-
-                const response = await ApiClient.post(`/node-groups/${targetGroupId}/nodes`, { 
-                    node_ids: selectedIds,
-                    is_move: isMove
-                });
-                
-                if (!response.ok) throw new Error('Request failed');
-
-                alert(`Successfully ${actionText} ${selectedIds.length} nodes!`);
-                
-                document.querySelectorAll('.node-checkbox:checked').forEach(cb => cb.checked = false);
-                this.updateToolbarState();
-                this.loadNodes();
-            } catch (error) {
-                alert(`Error: Could not process the nodes.`);
-                console.error(error);
-            }
-        };
-
         const btnBulkAdd = document.getElementById('btn-bulk-add');
         if (btnBulkAdd) {
-            btnBulkAdd.addEventListener('click', () => handleBulkTransfer(false));
+            btnBulkAdd.addEventListener('click', async () => this.handleBulkTransfer(false));
         }
 
         const btnBulkMoveBtn = document.getElementById('btn-bulk-move');
         if (btnBulkMoveBtn) {
-            btnBulkMoveBtn.addEventListener('click', () => handleBulkTransfer(true));
+            btnBulkMoveBtn.addEventListener('click', async () => this.handleBulkTransfer(true));
         }
 
         const btnBulkDelete = document.getElementById('btn-bulk-delete');
@@ -154,7 +127,65 @@ export class NodesController {
                 }
             });
         }
+
+        const btnBulkPublic = document.getElementById('btn-bulk-public');
+        if (btnBulkPublic) {
+            btnBulkPublic.addEventListener('click', async () => this.handleVisibilityChange(true));
+        }
+
+        const btnBulkPrivate = document.getElementById('btn-bulk-private');
+        if (btnBulkPrivate) {
+            btnBulkPrivate.addEventListener('click', async () => this.handleVisibilityChange(false));
+        }
+
     }
+
+    async handleVisibilityChange(isPublic) {
+        const selectedIds = Array.from(document.querySelectorAll('.node-checkbox:checked')).map(cb => cb.value);
+        
+        try {
+            const response = await ApiClient.patch('/nodes/bulk-visibility', { 
+                node_ids: selectedIds,
+                is_public: isPublic 
+            });
+            
+            if (!response.ok) throw new Error('Request failed');
+
+            document.querySelectorAll('.node-checkbox:checked').forEach(cb => cb.checked = false);
+            this.updateToolbarState();
+            this.loadNodes();
+        } catch (error) {
+            alert('Error updating node visibility.');
+            console.error(error);
+        }
+    };
+
+    async handleBulkTransfer(isMove) {
+        const targetGroupId = document.getElementById('bulk-move-select').value;
+        if (!targetGroupId) return alert("Please select a target group from the dropdown.");
+
+        const selectedIds = Array.from(document.querySelectorAll('.node-checkbox:checked')).map(cb => cb.value);
+        const actionText = isMove ? 'moved' : 'added';
+        
+        try {
+
+            const response = await ApiClient.post(`/node-groups/${targetGroupId}/nodes`, { 
+                node_ids: selectedIds,
+                is_move: isMove
+            });
+            
+            if (!response.ok) throw new Error('Request failed');
+
+            alert(`Successfully ${actionText} ${selectedIds.length} nodes!`);
+            
+            document.querySelectorAll('.node-checkbox:checked').forEach(cb => cb.checked = false);
+            this.updateToolbarState();
+            this.loadNodes();
+        } catch (error) {
+            alert(`Error: Could not process the nodes.`);
+            console.error(error);
+        }
+    };
 
     handleViewChange(viewName) {
         if (viewName === 'nodes') {
@@ -202,10 +233,14 @@ export class NodesController {
         const btnAdd = document.getElementById('btn-bulk-add');
         const btnMove = document.getElementById('btn-bulk-move');
         const btnDelete = document.getElementById('btn-bulk-delete');
+        const btnPublic = document.getElementById('btn-bulk-public');
+        const btnPrivate = document.getElementById('btn-bulk-private');
 
         if (btnAdd) btnAdd.disabled = disableBulk;
         if (btnMove) btnMove.disabled = disableBulk;
         if (btnDelete) btnDelete.disabled = disableBulk;
+        if (btnPublic) btnPublic.disabled = disableBulk;
+        if (btnPrivate) btnPrivate.disabled = disableBulk;
     }
 
     renderNodes(groupedNodes) {
@@ -242,6 +277,11 @@ export class NodesController {
                         </td>
                         <td><i class="bi bi-battery-full ${statusColor}"></i> ${battery}</td>
                         <td class=" small">${new Date(node.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                        <td>
+                            <span class="badge ${node.is_public ? 'bg-success' : 'bg-secondary'}">
+                                ${node.is_public ? 'Public' : 'Private'}
+                            </span>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -268,6 +308,7 @@ export class NodesController {
                                         <th>MAC Address</th>
                                         <th>Battery</th>
                                         <th>Added On</th>
+                                        <th>Visibility</th>
                                     </tr>
                                 </thead>
                                 <tbody>

@@ -41,6 +41,7 @@ Route::middleware(['auth:sanctum', 'ability:dashboard'])->group(function () {
     Route::patch('/alarms/{id}/resolve', [AlarmController::class, 'resolveAlarm']);
 
     Route::get('/my-nodes', [NodeController::class, 'getMyNodes']);
+    Route::patch('/nodes/bulk-visibility', [NodeController::class, 'updateBulkVisibility']);
     Route::get('/nodes/{node}/groups', [NodeController::class, 'getGroups']);
 
     Route::post('/logout', [AuthController::class, 'logout']);

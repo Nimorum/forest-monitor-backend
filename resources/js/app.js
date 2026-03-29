@@ -4,7 +4,7 @@ import { MapController } from './map';
 import { DashboardController } from './dashboard';
 import { AuthController } from './auth';
 import { NavbarController } from './navbar';
-import { HistoryController } from './history';
+import { ManageController } from './manage';
 import { AlarmController } from './alarms';
 import { NodesController } from './nodes';
 
@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize our controllers (they will automatically subscribe to events)
     new NavbarController();
     new MapController();
-    new HistoryController();
+    new ManageController();
     new DashboardController();
     new AuthController();
     new AlarmController();

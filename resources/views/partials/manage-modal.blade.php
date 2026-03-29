@@ -1,8 +1,8 @@
-<div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+<div class="modal fade" id="manageModal" tabindex="-1" aria-labelledby="manageModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content bg-dark text-light border-secondary">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title" id="historyModalLabel">Manage Node</h5>
+                <h5 class="modal-title" id="manageModalLabel">Manage Node</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -75,8 +75,22 @@
                     </div>
 
                     <div class="tab-pane fade" id="settings-pane" role="tabpanel" tabindex="0">
+
                         <div class="card bg-dark border-secondary mb-3">
-                            <div class="card-header border-secondary fw-bold">Group Management</div>
+                            <div class="card-header border-secondary text-white fw-bold">Visibility Settings</div>
+                            <div class="card-body">
+                                <div class="form-check form-switch d-flex align-items-center gap-2">
+                                    <input class="form-check-input mt-0 bg-dark border-secondary" type="checkbox" role="switch" id="modal-visibility-switch" style="width: 2.5em; height: 1.25em; cursor: pointer;">
+                                    <label class="form-check-label mb-0 text-white" for="modal-visibility-switch" style="cursor: pointer;">
+                                        Public Node
+                                    </label>
+                                </div>
+                                <p class="text-secondary small mt-2 mb-0">Public nodes can be viewed by anyone on the map. Private nodes are only visible to you.</p>
+                            </div>
+                        </div>
+
+                        <div class="card bg-dark border-secondary mb-3">
+                            <div class="card-header border-secondary text-white fw-bold">Group Management</div>
                             <div class="card-body">
                                 
                                 <div class="mb-4 p-3 border border-secondary rounded bg-dark" style="background-color: rgba(255,255,255,0.02) !important;">

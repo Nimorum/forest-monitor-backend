@@ -3,11 +3,11 @@ import { ApiClient } from './api';
 import Chart from 'chart.js/auto';
 import flatpickr from 'flatpickr';
 
-export class HistoryController {
+export class ManageController {
     constructor() {
-        this.modalElement = document.getElementById('historyModal');
+        this.modalElement = document.getElementById('manageModal');
         this.modalInstance = new bootstrap.Modal(this.modalElement);
-        this.titleElement = document.getElementById('historyModalLabel');
+        this.titleElement = document.getElementById('manageModalLabel');
         this.loadingElement = document.getElementById('history-loading');
         this.errorElement = document.getElementById('history-error');
         this.chartContainer = document.getElementById('chart-container');
@@ -23,6 +23,7 @@ export class HistoryController {
 
         this.currentGroupsContainer = document.getElementById('current-node-groups');
         this.globalDateFilters = document.getElementById('global-date-filters');
+        this.visibilitySwitch = document.getElementById('modal-visibility-switch');
 
         this.chartInstance = null;
         this.currentNodeId = null;
@@ -62,6 +63,27 @@ export class HistoryController {
                 }
             });
         });
+
+        if (this.visibilitySwitch) {
+            this.visibilitySwitch.addEventListener('change', async (e) => {
+                const isPublic = e.target.checked;
+                
+                try {
+                    const response = await ApiClient.patch('/nodes/bulk-visibility', { 
+                        node_ids: [this.currentNodeId],
+                        is_public: isPublic 
+                    });
+                    
+                    if (!response.ok) throw new Error('Request failed');
+                    
+                    eventBus.publish('nodes:refresh'); 
+                } catch (error) {
+                    e.target.checked = !isPublic; 
+                    alert('Error updating visibility.');
+                    console.error(error);
+                }
+            });
+        }
     }
 
     initDatePickers(defaultStart, defaultEnd) {
@@ -188,6 +210,7 @@ export class HistoryController {
             if (!response.ok) throw new Error(result.message || 'Failed to load history.');
 
             this.titleElement.textContent = `${result.mac_address}`;
+            this.visibilitySwitch.checked = result.is_public;
 
             const sortedData = result.data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             

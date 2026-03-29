@@ -18,7 +18,7 @@
         @include('partials.map')
         @include('partials.dashboard')
         @include('partials.modals')
-        @include('partials.history-modal')
+        @include('partials.manage-modal')
         @include('partials.nodes')
         @include('partials.alarms')
 

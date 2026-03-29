@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Node;
+use Carbon\Carbon;
 use App\Models\Telemetry;
 
 class TelemetryController extends Controller
@@ -43,7 +45,7 @@ class TelemetryController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
         ]);
 
-        $node = \App\Models\Node::findOrFail($id);
+        $node = Node::findOrFail($id);
 
         $user = auth('sanctum')->user();
 
@@ -54,8 +56,8 @@ class TelemetryController extends Controller
                 ], 403);
             }
         }
-        $start = \Carbon\Carbon::parse($request->start_date);
-        $end = \Carbon\Carbon::parse($request->end_date);
+        $start = Carbon::parse($request->start_date);
+        $end = Carbon::parse($request->end_date);
 
         $telemetries = $node->telemetries()
             ->whereBetween('created_at', [$start, $end])
@@ -72,6 +74,7 @@ class TelemetryController extends Controller
         return response()->json([
             'node_id' => $node->id,
             'mac_address' => $node->mac_address,
+            'is_public' => $node->is_public,
             'period' => [
                 'start' => $start->toIso8601String(),
                 'end' => $end->toIso8601String(),
