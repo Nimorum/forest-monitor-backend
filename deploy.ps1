@@ -12,3 +12,5 @@ docker exec forest-monitor-app php artisan optimize:clear
 docker exec forest-monitor-app php artisan optimize
 
 Write-Host "Deploy complete!"
+
+Read-Host -Prompt "Press ENTER to close or Ctrl+C to exit"

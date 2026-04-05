@@ -1,9 +1,30 @@
 services:
+  # -----------------------------------------------------------------------
+  # Caddy Reverse Proxy
+  # Automatically handles Let's Encrypt SSL certificates (HTTPS) and
+  # routes incoming public web traffic to the internal Laravel application.
+  # -----------------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # -----------------------------------------------------------------------
+  # Main Laravel Application
+  # Runs PHP 8.3-FPM and Nginx. Handles all incoming HTTP requests and
+  # serves the web application and API endpoints.
+  # -----------------------------------------------------------------------
   app:
     image: serversideup/php:8.3-fpm-nginx
     container_name: forest-monitor-app
-    ports:
-      - "80:8080"
+    # Caddy will talk to it internally.
     environment:
       - PHP_OPCACHE_ENABLE=1
     volumes:
@@ -12,6 +33,11 @@ services:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
+  # -----------------------------------------------------------------------
+  # DuckDNS Updater
+  # Automatically updates the DuckDNS registry with the current public IP
+  # address of the server, ensuring the domain always points here.
+  # -----------------------------------------------------------------------
   duckdns:
     image: lscr.io/linuxserver/duckdns:latest
     container_name: duckdns
@@ -20,3 +46,37 @@ services:
       - TOKEN=${DUCKDNS_TOKEN}
       - TZ=Europe/Lisbon
     restart: unless-stopped
+
+  # -----------------------------------------------------------------------
+  # Laravel Scheduler
+  # Acts as a cron daemon. Wakes up every minute to check routes/console.php
+  # and dispatches scheduled commands or jobs to the database queue.
+  # -----------------------------------------------------------------------
+  scheduler:
+    image: serversideup/php:8.3-fpm-nginx
+    container_name: forest-monitor-scheduler
+    volumes:
+      - .:/var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["php", "artisan", "schedule:work"]
+    restart: unless-stopped
+
+  # -----------------------------------------------------------------------
+  # Laravel Queue Worker
+  # Asynchronously processes background tasks (Jobs) from the database
+  # queue, such as evaluating alarms or sending notifications.
+  # -----------------------------------------------------------------------
+  queue-worker:
+    image: serversideup/php:8.3-fpm-nginx
+    container_name: forest-monitor-queue
+    volumes:
+      - .:/var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["php", "artisan", "queue:work"]
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -13,7 +13,7 @@ const IDWCanvasLayer = L.Layer.extend({
         this._canvas.style.pointerEvents = 'none';
         this._canvas.style.opacity = 0.7;
         this._canvas.style.filter = 'blur(8px)';
-        
+
         map.getPanes().overlayPane.appendChild(this._canvas);
         map.on('moveend zoomend resize', this._redraw, this);
         this._redraw();
@@ -27,7 +27,7 @@ const IDWCanvasLayer = L.Layer.extend({
         const size = this._map.getSize();
         this._canvas.width = size.x;
         this._canvas.height = size.y;
-        
+
         const topLeft = this._map.containerPointToLayerPoint([0, 0]);
         L.DomUtil.setPosition(this._canvas, topLeft);
 
@@ -45,13 +45,13 @@ export class MapController {
         this.container = document.getElementById('map-view');
         this.navItem = document.getElementById('nav-map');
         this.layerSelect = document.getElementById('heatmap-layer-select');
-        
+
         this.mapInstance = null;
         this.markerLayer = null;
-        this.customCanvasLayer = null; 
-        
+        this.customCanvasLayer = null;
+
         this.currentFeatures = [];
-        
+
         eventBus.subscribe('view:changed', (viewName) => this.handleViewChange(viewName));
     }
 
@@ -69,7 +69,7 @@ export class MapController {
     initMap() {
         if (!this.mapInstance) {
             this.mapInstance = L.map(this.container.id).setView([39.833333, -8.933333], 13);
-            
+
             L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
                 maxZoom: 20,
                 attribution: '&copy; Stadia Maps, &copy; OpenMapTiles &copy; OpenStreetMap contributors'
@@ -80,7 +80,7 @@ export class MapController {
             }).addTo(this.mapInstance);
 
             this.markerLayer = L.layerGroup().addTo(this.mapInstance);
-            
+
             this.mapInstance.on('moveend', () => this.fetchNodesInView());
 
             if (this.layerSelect) {
@@ -95,7 +95,7 @@ export class MapController {
 
     async fetchNodesInView() {
         const bounds = this.mapInstance.getBounds();
-        
+
         const params = new URLSearchParams({
             north: bounds.getNorthEast().lat,
             south: bounds.getSouthWest().lat,
@@ -106,7 +106,7 @@ export class MapController {
         try {
             const response = await ApiClient.get(`/map-data?${params.toString()}`);
             const result = await response.json();
-            
+
             if (result.type === 'FeatureCollection' && result.features) {
                 this.currentFeatures = result.features;
                 this.renderMarkers();
@@ -137,7 +137,7 @@ export class MapController {
         } else if (mode === 'wind') {
             stops = [{v: 0, c: [255,255,255]}, {v: 10, c: [153,102,255]}, {v: 20, c: [102,0,204]}];
         } else {
-            return [255, 255, 255]; 
+            return [255, 255, 255];
         }
 
         if (val <= stops[0].v) return stops[0].c;
@@ -165,24 +165,24 @@ export class MapController {
         if (mode === 'none' || this.currentFeatures.length === 0) return;
 
         const cutoffMeters = 2500; // Raio Real (Ex: 2500 metros = 2.5km)
-        
+
         const center = this.mapInstance.getCenter();
         const centerPt = this.mapInstance.latLngToContainerPoint(center);
         const testPt = L.point(centerPt.x + 100, centerPt.y);
         const testLatLng = this.mapInstance.containerPointToLatLng(testPt);
-        const metersPer100Px = center.distanceTo(testLatLng); 
+        const metersPer100Px = center.distanceTo(testLatLng);
         const pixelsPerMeter = 100 / metersPer100Px;
 
         const cellSize = 4; // Tamanho da célula em pixels (ajustável para performance/qualidade)
         let maxDist = cutoffMeters * pixelsPerMeter;
         maxDist = Math.max(maxDist, cellSize * 1.5);
-        
+
         const fadeZone = maxDist * 0.45;
 
         const screenPoints = this.currentFeatures.map(f => {
             const props = f.properties;
             const pt = this.mapInstance.latLngToContainerPoint([f.geometry.coordinates[1], f.geometry.coordinates[0]]);
-            
+
             let val = 0;
             if (mode === 'temperature') val = props.temperature || 0;
             if (mode === 'humidity') val = props.humidity || 0;
@@ -200,19 +200,19 @@ export class MapController {
                 for (let p of screenPoints) {
                     const dist = Math.hypot(p.x - x, p.y - y);
                     if (dist < minDist) minDist = dist;
-                    
-                    if (dist < 1) { num = p.value; den = 1; break; } 
-                    
+
+                    if (dist < 1) { num = p.value; den = 1; break; }
+
                     const weight = 1 / (dist * dist);
                     num += p.value * weight;
                     den += weight;
                 }
 
-                if (minDist > maxDist) continue; 
+                if (minDist > maxDist) continue;
 
                 const finalValue = num / den;
                 const rgb = this.interpolateColor(finalValue, mode);
-                
+
                 let alpha = 1;
                 if (minDist > (maxDist - fadeZone)) {
                     alpha = 1 - ((minDist - (maxDist - fadeZone)) / fadeZone);
@@ -275,7 +275,7 @@ export class MapController {
                             ${new Date(props.last_update).toLocaleString()}
                         </div>
                     ` : '<div class="small text-muted text-center py-2">Awaiting first payload</div>'}
-                    
+
                     ${window.isAuthenticated ? `
                         <button class="btn btn-sm btn-outline-primary w-100 mt-2 btn-history" data-id="${props.node_id}" data-id="${props.node_id}">
                             Manage
@@ -287,7 +287,7 @@ export class MapController {
             const marker = L.marker([lat, lng], { icon })
                 .bindPopup(popupContent)
                 .addTo(this.markerLayer);
-                
+
             marker.on('popupopen', () => {
                 const btn = document.querySelector(`.btn-history[data-id="${props.node_id}"]`);
                 if (btn) {
