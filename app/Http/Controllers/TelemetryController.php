@@ -19,7 +19,7 @@ class TelemetryController extends Controller
             'humidity' => 'nullable|numeric',
             'wind_speed' => 'nullable|numeric',
             'soil_moisture' => 'nullable|numeric',
-            'vbat' => 'nullable|numeric',
+            'battery_voltage' => 'nullable|numeric',
         ]);
 
         $node = Node::where('mac_address', $validated['mac_address'])->first();
@@ -29,7 +29,7 @@ class TelemetryController extends Controller
             'humidity' => $validated['humidity'] ?? null,
             'wind_speed' => $validated['wind_speed'] ?? null,
             'soil_moisture' => $validated['soil_moisture'] ?? null,
-            'vbat' => $validated['vbat'] ?? null,
+            'vbat' => $validated['battery_voltage'] ?? null,
         ]);
 
         return response()->json([
@@ -63,11 +63,11 @@ class TelemetryController extends Controller
             ->whereBetween('created_at', [$start, $end])
             ->orderBy('created_at', 'asc')
             ->get([
-                'temperature', 
-                'humidity', 
-                'wind_speed', 
-                'soil_moisture', 
-                'vbat', 
+                'temperature',
+                'humidity',
+                'wind_speed',
+                'soil_moisture',
+                'vbat',
                 'created_at'
             ]);
 
