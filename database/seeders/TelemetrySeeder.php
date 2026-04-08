@@ -21,22 +21,24 @@ class TelemetrySeeder extends Seeder
         }
 
         foreach ($nodes as $node) {
-
+            if($node->mac_address == '3C:0F:02:ED:C5:10'){
+                continue;
+            }
             $node->telemetries()->create([
                 // Temperatura: 15.0 ºC a 38.0 ºC
                 'temperature' => mt_rand(150, 380) / 10,
-                
+
                 // Humidade do ar: 20.0% a 85.0%
                 'humidity' => mt_rand(200, 850) / 10,
-                
+
                 // Velocidade do vento: 0.0 a 45.0 km/h
                 'wind_speed' => mt_rand(0, 450) / 10,
-                
+
                 // Humidade do solo: 10.0% a 60.0% (floresta no verão costuma ser seca)
                 'soil_moisture' => mt_rand(100, 600) / 10,
-                
+
                 // Tensão da Bateria (Vbat): 3.20V (vazia) a 4.20V (cheia)
-                'vbat' => mt_rand(320, 420) / 100, 
+                'vbat' => mt_rand(320, 420) / 100,
             ]);
         }
 
