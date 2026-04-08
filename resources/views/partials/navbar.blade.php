@@ -2,7 +2,7 @@
     <div class="container-fluid px-4">
         <a class="navbar-brand d-flex align-items-center" href="#">
             <img src="{{ asset('favicon.ico') }}" width="30" class="me-2">
-            Forest Monitor
+            Timber Track
         </a>
 
         <button class="navbar-toggler shadow-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#topNavbar">
