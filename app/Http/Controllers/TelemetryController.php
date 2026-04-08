@@ -20,6 +20,7 @@ class TelemetryController extends Controller
             'wind_speed' => 'nullable|numeric',
             'soil_moisture' => 'nullable|numeric',
             'battery_voltage' => 'nullable|numeric',
+            'colected_at' => 'nullable|date',
         ]);
 
         $node = Node::where('mac_address', $validated['mac_address'])->first();
@@ -30,6 +31,7 @@ class TelemetryController extends Controller
             'wind_speed' => $validated['wind_speed'] ?? null,
             'soil_moisture' => $validated['soil_moisture'] ?? null,
             'vbat' => $validated['battery_voltage'] ?? null,
+            'created_at' => $validated['colected_at'] ?? Carbon::now(),
         ]);
 
         return response()->json([
