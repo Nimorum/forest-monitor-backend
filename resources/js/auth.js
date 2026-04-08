@@ -6,6 +6,8 @@ export class AuthController {
         this.loginForm = document.getElementById('login-form');
         this.registerForm = document.getElementById('register-form');
         this.btnLogout = document.getElementById('btn-logout');
+        this.forgotForm = document.getElementById('forgot-password-form');
+        this.forgotLink = document.getElementById('link-forgot-password');
         
         this.loginAlert = document.getElementById('login-alert');
         this.registerAlert = document.getElementById('register-alert');
@@ -26,6 +28,25 @@ export class AuthController {
         if (this.btnLogout) {
             this.btnLogout.addEventListener('click', () => this.handleLogout());
         }
+
+        if (this.forgotForm) {
+            this.forgotForm.addEventListener('submit', (e) => this.handleForgotPassword(e));
+        }
+        if (this.forgotLink) {
+            this.forgotLink.addEventListener('click', (e) => this.handleForgotLinkClick(e));
+        }
+    }
+
+    handleForgotLinkClick(e) {
+        e.preventDefault();
+        const loginModalElement = document.getElementById('loginModal');
+        const loginModalInstance = bootstrap.Modal.getInstance(loginModalElement);
+        if (loginModalInstance) {
+            loginModalInstance.hide();
+        }
+        const forgotModalElement = document.getElementById('forgotPasswordModal');
+        const forgotModal = new bootstrap.Modal(forgotModalElement);
+        forgotModal.show();
     }
 
     checkInitialState() {
@@ -47,24 +68,18 @@ export class AuthController {
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
 
-        try {
-
-            ApiClient.post('/login', { email, password })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.token) {
-                        this.processSuccessfulAuth(data.token, 'loginModal');
-                    } else {
-                        throw new Error(data.message || 'Invalid credentials.');
-                    }
-                })
-                .catch(error => {
-                    this.showAlert(this.loginAlert, error.message);
-                });
-
-        } catch (error) {
-            this.showAlert(this.loginAlert, error.message);
-        }
+        ApiClient.post('/login', { email, password })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    this.processSuccessfulAuth(data.token, 'loginModal');
+                } else {
+                    throw new Error(data.message || 'Invalid credentials.');
+                }
+            })
+            .catch(error => {
+                this.showAlert(this.loginAlert, error.message);
+            });
     }
 
     async handleRegister(e) {
@@ -107,6 +122,23 @@ export class AuthController {
             .catch(() => {
                 // Even if logout request fails, clear local auth state
                 this.clearAuthState();
+            });
+    }
+
+    async handleForgotPassword(e) {
+        e.preventDefault();
+        const email = document.getElementById('forgot-email').value;
+        const alert = document.getElementById('forgot-alert');
+
+        ApiClient.post('/forgot-password', { email })
+            .then(response => response.json())
+            .then(data => {
+                this.showAlert(alert, data.message);
+                alert.classList.replace('alert-danger', 'alert-success');
+            })
+            .catch(error => {
+                this.showAlert(alert, 'Erro ao processar pedido.');
+                alert.classList.replace('alert-success', 'alert-danger');
             });
     }
 

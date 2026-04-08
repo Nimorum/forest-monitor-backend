@@ -62,7 +62,6 @@ export class NavbarController {
 
         eventBus.subscribe('auth:success', () => this.setAuthenticatedState());
         eventBus.subscribe('auth:logout', () => this.setUnauthenticatedState());
-        console.log('NavbarController initialized and listeners set up.');
     }
 
     setAuthenticatedState() {

@@ -19,6 +19,9 @@
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Login</button>
                 </form>
+                <div class="mt-2 text-end">
+                    <a href="#" id="link-forgot-password" class="text-info small">Forgot Password?</a>
+                </div>
             </div>
         </div>
     </div>
@@ -48,6 +51,23 @@
                         <input type="password" class="form-control bg-dark text-light border-secondary" id="register-password" required minlength="8">
                     </div>
                     <button type="submit" class="btn btn-success w-100">Register</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-body">
+                <div id="forgot-alert" class="alert d-none"></div>
+                <form id="forgot-password-form">
+                    <div class="mb-3">
+                        <label class="form-label">Recovery Email</label>
+                        <input type="email" id="forgot-email" class="form-control bg-dark text-light border-secondary" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Send Link</button>
                 </form>
             </div>
         </div>

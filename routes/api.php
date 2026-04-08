@@ -19,6 +19,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/map-data', [MapController::class, 'getMapData']);
 Route::get('/nodes-history', [MapController::class, 'getNodesHistoryAtTime']);
 Route::get('/nodes/{id}/telemetry', [TelemetryController::class, 'getTelemetryHistory']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 
 /*
