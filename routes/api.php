@@ -34,6 +34,7 @@ Route::middleware(['auth:sanctum', 'ability:dashboard'])->group(function () {
     Route::delete('/node-groups/{nodeGroup}', [NodeGroupController::class, 'destroy']);
     Route::post('/node-groups/{nodeGroup}/nodes', [NodeGroupController::class, 'assignNodes']);
     Route::get('/node-groups', [NodeGroupController::class, 'index']);
+    Route::get('/can-manage-node/{node}', [NodeController::class, 'canManage']);
 
     Route::post('/create-gateway-token', [AuthController::class, 'createGatewayToken']);
     Route::get('/tokens', [AuthController::class, 'listGatewayTokens']);

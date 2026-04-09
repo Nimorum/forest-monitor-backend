@@ -25,11 +25,16 @@ export class ManageController {
         this.globalDateFilters = document.getElementById('global-date-filters');
         this.visibilitySwitch = document.getElementById('modal-visibility-switch');
 
+        this.mapBntn = document.getElementById('btn-center-node');
+
         this.chartInstance = null;
         this.currentNodeId = null;
 
         this.fpStart = null;
         this.fpEnd = null;
+        this.canManageNode = false;
+        this.longitude = null;
+        this.latitude = null;
 
         this.initListeners();
     }
@@ -84,6 +89,17 @@ export class ManageController {
                 }
             });
         }
+
+        if (this.mapBntn) {
+            this.mapBntn.addEventListener('click', () => {
+                if (this.longitude !== null && this.latitude !== null) {
+                    eventBus.publish('map:center-on', { longitude: this.longitude, latitude: this.latitude });
+                    this.modalInstance.hide();
+                } else {
+                    alert('Node location data is not available.');
+                }
+            });
+        }
     }
 
     initDatePickers(defaultStart, defaultEnd) {
@@ -111,7 +127,7 @@ export class ManageController {
         return d.toISOString().slice(0, 16);
     }
 
-    openManage(nodeId) {
+    async openManage(nodeId) {
         this.currentNodeId = nodeId;
         this.modalInstance.show();
 
@@ -124,10 +140,32 @@ export class ManageController {
         start.setHours(start.getHours() - 24);
 
         this.initDatePickers(start, end);
-
+        this.canManageNode = await this.loadCanManageStatus();
         this.fetchAndRenderData();
-        this.loadGroups();
-        this.loadCurrentNodeGroups();
+        if (this.canManageNode) {
+            this.loadGroups();
+            this.loadCurrentNodeGroups();
+        }
+    }
+
+    async loadCanManageStatus() {
+        console.log('Checking node management rights for node ID:', this.currentNodeId);
+        try {
+            const response = await ApiClient.get(`/can-manage-node/${this.currentNodeId}`);
+            const result = await response.json();
+            const settingsTab = document.getElementById('settings-tab');
+            if(result.data) {
+                settingsTab.classList.remove('d-none');
+            } else {
+                settingsTab.classList.add('d-none');
+            }
+
+            return result.data;
+        } catch (error) {
+            return false;
+        }
+
+        
     }
 
     async loadGroups() {
@@ -211,6 +249,8 @@ export class ManageController {
 
             this.titleElement.textContent = `${result.mac_address}`;
             this.visibilitySwitch.checked = result.is_public;
+            this.longitude = result.longitude;
+            this.latitude = result.latitude;
 
             const sortedData = result.data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             

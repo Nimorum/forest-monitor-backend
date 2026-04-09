@@ -53,6 +53,13 @@ export class MapController {
         this.currentFeatures = [];
 
         eventBus.subscribe('view:changed', (viewName) => this.handleViewChange(viewName));
+        eventBus.subscribe('map:center-on', (data) => {
+            if (this.mapInstance) {
+                this.container.parentElement.classList.remove('d-none');
+                this.navItem.classList.add('active');
+                this.mapInstance.setView([data.latitude, data.longitude], data.zoom || 15);
+            }
+        });
     }
 
     handleViewChange(viewName) {

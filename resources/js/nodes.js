@@ -50,6 +50,22 @@ export class NodesController {
                 eventBus.publish('node:history:requested', nodeId);
                 return; 
             }
+
+            const centerOnMapBtn = e.target.closest('.btn-center-group');
+            if (centerOnMapBtn) {
+                e.preventDefault();
+
+                const lat = parseFloat(centerOnMapBtn.getAttribute('data-lat'));
+                const lng = parseFloat(centerOnMapBtn.getAttribute('data-lng'));
+
+                eventBus.publish('map:center-on', { 
+                    latitude: lat, 
+                    longitude: lng, 
+                    zoom: 14
+                });
+                this.handleViewChange("map");
+                return;
+            }
         });
 
         this.accordionContainer.addEventListener('change', (e) => {
@@ -212,7 +228,6 @@ export class NodesController {
             if (!response.ok) throw new Error(result.message || 'Failed to load nodes.');
 
             const nodesArray = result.data || result; 
-            
             this.renderNodes(nodesArray);
 
         } catch (error) {
@@ -244,7 +259,7 @@ export class NodesController {
     }
 
     renderNodes(groupedNodes) {
-        if (!groupedNodes || Object.keys(groupedNodes).length === 0) {
+        if (!groupedNodes || groupedNodes.length === 0) {
             this.noNodesState.classList.remove('d-none');
             document.getElementById('nodes-toolbar').classList.add('d-none');
             return;
@@ -253,15 +268,24 @@ export class NodesController {
         document.getElementById('nodes-toolbar').classList.remove('d-none');
 
         let html = '';
-        let index = 0;
 
-        for (const [groupName, groupNodes] of Object.entries(groupedNodes)) {
+        groupedNodes.forEach((group, index) => {
             const isFirst = index === 0;
             const collapseId = `collapse-group-${index}`;
             const displayClass = isFirst ? '' : 'd-none';
             const iconClass = isFirst ? 'open' : '';
 
-            const tableRows = groupNodes.map(node => {
+            let centerBtnHtml = '';
+            
+            if (group.lat !== null && group.long !== null) {
+                centerBtnHtml = `
+                    <span class="btn btn-sm me-3 btn-center-group" data-lat="${group.lat}" data-lng="${group.long}" title="Center map on group">
+                        📌
+                    </span>
+                `;
+            }
+
+            const tableRows = group.nodes.map(node => {
                 const battery = node.latest_telemetry ? `${node.latest_telemetry.vbat}V` : '<span class="text-muted">N/A</span>';
                 const statusColor = node.is_online !== false ? 'text-success' : 'text-danger';
 
@@ -288,14 +312,17 @@ export class NodesController {
 
             html += `
                 <div class="bg-dark border border-secondary rounded mb-2 overflow-hidden">
-                    <button class="w-100 d-flex justify-content-between align-items-center p-3 bg-dark text-light border-0 custom-toggle-btn" data-target-id="${collapseId}">
+                    <div class="w-100 d-flex justify-content-between align-items-center p-3 bg-dark text-light border-0 custom-toggle-btn" role="button" data-target-id="${collapseId}">
                         <div>
                             <i class="bi bi-geo-alt-fill text-primary me-2"></i> 
-                            <strong>${groupName}</strong> 
-                            <span class="badge bg-secondary ms-2">${groupNodes.length} Nodes</span>
+                            <strong>${group.groupName}</strong> 
+                            <span class="badge bg-secondary ms-2">${group.nodes.length} Nodes</span>
                         </div>
-                        <i class="bi bi-chevron-down chevron-icon ${iconClass}"></i>
-                    </button>
+                        <div class="d-flex align-items-center">
+                            ${centerBtnHtml}
+                            <i class="bi bi-chevron-down chevron-icon ${iconClass}"></i>
+                        </div>
+                    </div>
                     
                     <div id="${collapseId}" class="${displayClass} border-top border-secondary">
                         <div class="table-responsive">
@@ -319,8 +346,7 @@ export class NodesController {
                     </div>
                 </div>
             `;
-            index++;
-        }
+        });
 
         this.accordionContainer.innerHTML = html;
         this.updateToolbarState(); 

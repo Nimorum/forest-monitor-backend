@@ -42,15 +42,24 @@ class NodeController extends Controller
             ->get();
 
         foreach ($groups as $group) {
-            $groupedData[$group->name] = $group->nodes->map(function ($node) {
-                return [
-                    'id' => $node->id,
-                    'mac_address' => $node->mac_address,
-                    'is_public' => $node->is_public,
-                    'created_at' => $node->created_at,
-                    'latest_telemetry' => $node->latestTelemetry,
-                ];
-            });
+            // Calcula a média ignorando os nós que ainda não têm coordenadas (null)
+            $avgLat = $group->nodes->avg('latitude');
+            $avgLng = $group->nodes->avg('longitude');
+
+            $groupedData[] = [
+                'groupName' => $group->name,
+                'lat' => $avgLat,
+                'long' => $avgLng,
+                'nodes' => $group->nodes->map(function ($node) {
+                    return [
+                        'id' => $node->id,
+                        'mac_address' => $node->mac_address,
+                        'is_public' => $node->is_public,
+                        'created_at' => $node->created_at,
+                        'latest_telemetry' => $node->latestTelemetry,
+                    ];
+                })->values()->all()
+            ];
         }
 
         $unassignedNodes = $user->nodes()
@@ -59,15 +68,23 @@ class NodeController extends Controller
             ->get();
 
         if ($unassignedNodes->isNotEmpty()) {
-            $groupedData['Unassigned Area'] = $unassignedNodes->map(function ($node) {
-                return [
-                    'id' => $node->id,
-                    'mac_address' => $node->mac_address,
-                    'is_public' => $node->is_public,
-                    'created_at' => $node->created_at,
-                    'latest_telemetry' => $node->latestTelemetry,
-                ];
-            });
+            $avgLat = $unassignedNodes->avg('latitude');
+            $avgLng = $unassignedNodes->avg('longitude');
+
+            $groupedData[] = [
+                'groupName' => 'Unassigned Area',
+                'lat' => $avgLat,
+                'long' => $avgLng,
+                'nodes' => $unassignedNodes->map(function ($node) {
+                    return [
+                        'id' => $node->id,
+                        'mac_address' => $node->mac_address,
+                        'is_public' => $node->is_public,
+                        'created_at' => $node->created_at,
+                        'latest_telemetry' => $node->latestTelemetry,
+                    ];
+                })->values()->all()
+            ];
         }
 
         return response()->json([
@@ -169,6 +186,11 @@ class NodeController extends Controller
             'message' => 'Average telemetry data retrieved successfully.',
             'data' => $averageData
         ]);
+    }
+
+    public function canManage(Node $node)
+    {
+        return ['data' => $node->user_id === Auth::id()];
     }
 
 }    

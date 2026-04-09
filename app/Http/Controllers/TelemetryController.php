@@ -77,6 +77,8 @@ class TelemetryController extends Controller
             'node_id' => $node->id,
             'mac_address' => $node->mac_address,
             'is_public' => $node->is_public,
+            'longitude' => $node->longitude,
+            'latitude' => $node->latitude,
             'period' => [
                 'start' => $start->toIso8601String(),
                 'end' => $end->toIso8601String(),

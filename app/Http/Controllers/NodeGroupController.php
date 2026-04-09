@@ -10,7 +10,10 @@ class NodeGroupController extends Controller
 {
     public function index()
     {
-        $groups = NodeGroup::where('user_id', Auth::id())->with('nodes')->get();
+        $groups = NodeGroup::where('user_id', Auth::id())
+            ->select('id', 'name')
+            ->get();
+
         return response()->json($groups);
     }
 

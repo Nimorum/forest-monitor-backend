@@ -24,6 +24,11 @@
                             <i class="bi bi-gear"></i> Settings
                         </button>
                     </li>
+                    <li class="nav-item ms-auto" role="presentation">
+                        <button type="button" class="btn btn-sm bg-transparent" id="btn-center-node" title="Center on Map">
+                        📌
+                        </button>
+                    </li>
                 </ul>
                 <div class="row g-2 mb-4 align-items-end" id = 'global-date-filters'>
                     <div class="col-md-5">

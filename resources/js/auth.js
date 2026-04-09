@@ -193,7 +193,6 @@ export class AuthController {
                 this.clearAuthState();
             })
             .catch(() => {
-                // Even if logout request fails, clear local auth state
                 this.clearAuthState();
             });
     }
@@ -220,6 +219,7 @@ export class AuthController {
         window.isAuthenticated = false;
         eventBus.publish('auth:logout', {});
         eventBus.publish('view:changed', 'map');
+        window.location.reload();
     }
 
     processSuccessfulAuth(token, modalId) {
@@ -235,6 +235,7 @@ export class AuthController {
 
         this.loginForm.reset();
         this.registerForm.reset();
+        window.location.reload();
     }
 
     showAlert(element, message) {
