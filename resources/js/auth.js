@@ -60,8 +60,6 @@ export class AuthController {
             if (resetModalElement) {
                 const resetModal = new bootstrap.Modal(resetModalElement);
                 resetModal.show();
-
-                // Limpa o URL para ficar bonito (remove o token e email visíveis)
                 window.history.replaceState({}, document.title, '/');
             }
         }
