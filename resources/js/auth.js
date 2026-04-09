@@ -8,12 +8,16 @@ export class AuthController {
         this.btnLogout = document.getElementById('btn-logout');
         this.forgotForm = document.getElementById('forgot-password-form');
         this.forgotLink = document.getElementById('link-forgot-password');
-        
+
         this.loginAlert = document.getElementById('login-alert');
         this.registerAlert = document.getElementById('register-alert');
 
+        this.resetForm = document.getElementById('reset-password-form');
+        this.resetAlert = document.getElementById('reset-alert');
+
         this.initListeners();
         this.checkInitialState();
+        this.checkPasswordResetUrl();
     }
 
     initListeners() {
@@ -32,8 +36,79 @@ export class AuthController {
         if (this.forgotForm) {
             this.forgotForm.addEventListener('submit', (e) => this.handleForgotPassword(e));
         }
+
         if (this.forgotLink) {
             this.forgotLink.addEventListener('click', (e) => this.handleForgotLinkClick(e));
+        }
+
+        if (this.resetForm) {
+            this.resetForm.addEventListener('submit', (e) => this.handlePasswordResetSubmit(e));
+        }
+    }
+
+    checkPasswordResetUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const email = urlParams.get('email');
+        const path = window.location.pathname;
+
+        if (path === '/reset-password' && token && email) {
+            document.getElementById('reset-token').value = token;
+            document.getElementById('reset-email').value = email;
+
+            const resetModalElement = document.getElementById('resetPasswordModal');
+            if (resetModalElement) {
+                const resetModal = new bootstrap.Modal(resetModalElement);
+                resetModal.show();
+
+                // Limpa o URL para ficar bonito (remove o token e email visíveis)
+                window.history.replaceState({}, document.title, '/');
+            }
+        }
+    }
+
+    async handlePasswordResetSubmit(e) {
+        e.preventDefault();
+        this.hideAlert(this.resetAlert);
+
+        const token = document.getElementById('reset-token').value;
+        const email = document.getElementById('reset-email').value;
+        const password = document.getElementById('reset-password').value;
+        const password_confirmation = document.getElementById('reset-password-confirmation').value;
+
+        if (password !== password_confirmation) {
+            this.showAlert(this.resetAlert, 'As passwords não coincidem.');
+            return;
+        }
+
+        try {
+            ApiClient.post('/reset-password', {
+                token, email, password, password_confirmation
+            })
+            .then(response => response.json().then(data => ({ status: response.status, body: data })))
+            .then(({ status, body }) => {
+                if (status >= 200 && status < 300) {
+                    this.showAlert(this.resetAlert, 'Password alterada com sucesso!');
+                    this.resetAlert.classList.replace('alert-danger', 'alert-success');
+
+                    // Fecha o modal passado uns segundos e abre o login
+                    setTimeout(() => {
+                        const resetModal = bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal'));
+                        if (resetModal) resetModal.hide();
+
+                        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                        loginModal.show();
+                    }, 2000);
+                } else {
+                    throw new Error(body.message || 'Erro ao alterar a password.');
+                }
+            })
+            .catch(error => {
+                this.showAlert(this.resetAlert, error.message);
+                this.resetAlert.classList.replace('alert-success', 'alert-danger');
+            });
+        } catch (error) {
+            this.showAlert(this.resetAlert, 'Ocorreu um erro inesperado.');
         }
     }
 
@@ -51,7 +126,7 @@ export class AuthController {
 
     checkInitialState() {
         const token = localStorage.getItem('auth_token');
-        
+
         if (token) {
             window.isAuthenticated = true;
             eventBus.publish('auth:success', {});
@@ -159,7 +234,7 @@ export class AuthController {
         }
 
         eventBus.publish('auth:success', {});
-        
+
         this.loginForm.reset();
         this.registerForm.reset();
     }
