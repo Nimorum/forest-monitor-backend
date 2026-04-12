@@ -46,7 +46,7 @@ Route::middleware(['auth:sanctum', 'ability:dashboard'])->group(function () {
     Route::get('/my-nodes', [NodeController::class, 'getMyNodes']);
     Route::patch('/nodes/bulk-visibility', [NodeController::class, 'updateBulkVisibility']);
     Route::get('/nodes/{node}/groups', [NodeController::class, 'getGroups']);
-    Route::post('/average-telemetry', [NodeController::class, 'getAverageTelemetry']);
+    Route::post('/average-telemetry', [TelemetryController::class, 'getAverageTelemetry']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {

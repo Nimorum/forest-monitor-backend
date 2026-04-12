@@ -42,7 +42,6 @@ class NodeController extends Controller
             ->get();
 
         foreach ($groups as $group) {
-            // Calcula a média ignorando os nós que ainda não têm coordenadas (null)
             $avgLat = $group->nodes->avg('latitude');
             $avgLng = $group->nodes->avg('longitude');
 
@@ -143,49 +142,6 @@ class NodeController extends Controller
             ->update(['is_public' => $validated['is_public']]);
 
         return response()->json(null, 204);
-    }
-
-    public function getAverageTelemetry(Request $request)
-    {
-        $validated = $request->validate([
-            'node_ids' => 'required|array|min:1',
-            'node_ids.*' => 'integer|exists:nodes,id',
-        ]);
-
-        $nodeIds = $validated['node_ids'];
-
-        // Get nodes that belong to user or are public
-        $nodes = Node::whereIn('id', $nodeIds)
-            ->where(function ($query) {
-                $query->where('user_id', Auth::id())
-                      ->orWhere('is_public', true);
-            })
-            ->with('latestTelemetry')
-            ->get();
-
-        // Filter out nodes without telemetry
-        $telemetries = $nodes->pluck('latestTelemetry')->filter();
-
-        if ($telemetries->isEmpty()) {
-            return response()->json([
-                'message' => 'No telemetry data found for the specified nodes.',
-                'data' => null
-            ]);
-        }
-
-        // Calculate averages
-        $averageData = [
-            'avg_temperature' => $telemetries->avg('temperature'),
-            'avg_humidity' => $telemetries->avg('humidity'),
-            'avg_wind_speed' => $telemetries->avg('wind_speed'),
-            'avg_soil_moisture' => $telemetries->avg('soil_moisture'),
-            'avg_vbat' => $telemetries->avg('vbat'),
-        ];
-
-        return response()->json([
-            'message' => 'Average telemetry data retrieved successfully.',
-            'data' => $averageData
-        ]);
     }
 
     public function canManage(Node $node)

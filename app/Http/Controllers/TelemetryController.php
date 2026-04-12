@@ -87,4 +87,54 @@ class TelemetryController extends Controller
             'data' => $telemetries
         ]);
     }
+
+    public function getAverageTelemetry(Request $request)
+    {
+        $validated = $request->validate([
+            'node_ids' => 'required|array|min:1',
+            'node_ids.*' => 'integer|exists:nodes,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $nodeIds = Node::whereIn('id', $validated['node_ids'])
+            ->where(function ($query) {
+                $query->where('user_id', Auth::id())
+                    ->orWhere('is_public', true);
+            })
+            ->pluck('id');
+
+        if ($nodeIds->isEmpty()) {
+            return response()->json([
+                'message' => 'No accessible nodes found.',
+                'data' => []
+            ]);
+        }
+
+        $hourlyData = Telemetry::whereIn('node_id', $nodeIds)
+            ->whereBetween('created_at', [$validated['start_date'], $validated['end_date']])
+            ->selectRaw('
+                DATE_FORMAT(created_at, "%Y-%m-%d %H:00:00") as hour,
+                AVG(temperature) as avg_temperature,
+                AVG(humidity) as avg_humidity,
+                AVG(wind_speed) as avg_wind_speed,
+                AVG(soil_moisture) as avg_soil_moisture,
+                AVG(vbat) as avg_vbat
+            ')
+            ->groupBy('hour')
+            ->orderBy('hour', 'ASC')
+            ->get();
+
+        if ($hourlyData->isEmpty()) {
+            return response()->json([
+                'message' => 'No telemetry data found for the specified period.',
+                'data' => []
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Hourly average telemetry data retrieved successfully.',
+            'data' => $hourlyData
+        ]);
+    }
 }
