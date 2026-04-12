@@ -89,7 +89,6 @@ export class AuthController {
                     this.showAlert(this.resetAlert, 'Password alterada com sucesso!');
                     this.resetAlert.classList.replace('alert-danger', 'alert-success');
 
-                    // Fecha o modal passado uns segundos e abre o login
                     setTimeout(() => {
                         const resetModal = bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal'));
                         if (resetModal) resetModal.hide();

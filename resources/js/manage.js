@@ -3,103 +3,102 @@ import { ApiClient } from './api';
 import Chart from 'chart.js/auto';
 import flatpickr from 'flatpickr';
 
+const formatDate = (dateString, includeYear = false) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    
+    if (includeYear) {
+        return `${day}/${month}/${date.getFullYear()} ${hours}:${minutes}`;
+    }
+    return `${day}/${month} ${hours}:${minutes}`;
+};
+
 export class ManageController {
     constructor() {
-        this.modalElement = document.getElementById('manageModal');
-        this.modalInstance = new bootstrap.Modal(this.modalElement);
-        this.titleElement = document.getElementById('manageModalLabel');
-        this.loadingElement = document.getElementById('history-loading');
-        this.errorElement = document.getElementById('history-error');
-        this.chartContainer = document.getElementById('chart-container');
-        this.tableBody = document.getElementById('telemetry-table-body');
-        
-        this.startDateInput = document.getElementById('history-start');
-        this.endDateInput = document.getElementById('history-end');
-        this.updateBtn = document.getElementById('btn-update-history');
-
-        this.groupSelect = document.getElementById('modal-group-select');
-        this.btnAddGroup = document.getElementById('btn-modal-add-group');
-        this.btnMoveGroup = document.getElementById('btn-modal-move-group');
-
-        this.currentGroupsContainer = document.getElementById('current-node-groups');
-        this.globalDateFilters = document.getElementById('global-date-filters');
-        this.visibilitySwitch = document.getElementById('modal-visibility-switch');
-
-        this.mapBntn = document.getElementById('btn-center-node');
-
-        this.chartInstance = null;
-        this.currentNodeId = null;
-
-        this.fpStart = null;
-        this.fpEnd = null;
-        this.canManageNode = false;
-        this.longitude = null;
-        this.latitude = null;
-
+        this.initDOM();
+        this.state = {
+            chartInstance: null,
+            currentNodeId: null,
+            fpStart: null,
+            fpEnd: null,
+            canManageNode: false,
+            longitude: null,
+            latitude: null
+        };
         this.initListeners();
+    }
+
+    initDOM() {
+        this.elements = {
+            modal: document.getElementById('manageModal'),
+            title: document.getElementById('manageModalLabel'),
+            loading: document.getElementById('history-loading'),
+            error: document.getElementById('history-error'),
+            chartContainer: document.getElementById('chart-container'),
+            tableBody: document.getElementById('telemetry-table-body'),
+            startDate: document.getElementById('history-start'),
+            endDate: document.getElementById('history-end'),
+            updateBtn: document.getElementById('btn-update-history'),
+            groupSelect: document.getElementById('modal-group-select'),
+            btnAddGroup: document.getElementById('btn-modal-add-group'),
+            btnMoveGroup: document.getElementById('btn-modal-move-group'),
+            currentGroupsContainer: document.getElementById('current-node-groups'),
+            globalDateFilters: document.getElementById('global-date-filters'),
+            visibilitySwitch: document.getElementById('modal-visibility-switch'),
+            mapBtn: document.getElementById('btn-center-node'),
+            settingsTab: document.getElementById('settings-tab'),
+            tabs: document.querySelectorAll('button[data-bs-toggle="tab"]')
+        };
+        this.modalInstance = new bootstrap.Modal(this.elements.modal);
     }
 
     initListeners() {
         eventBus.subscribe('node:history:requested', (nodeId) => this.openManage(nodeId));
 
-        if (this.updateBtn) {
-            this.updateBtn.addEventListener('click', () => {
-                if (this.currentNodeId) {
-                    this.fetchAndRenderData();
-                }
-            });
-        }
+        this.elements.updateBtn?.addEventListener('click', () => {
+            if (this.state.currentNodeId) this.fetchAndRenderData();
+        });
 
-        if (this.btnAddGroup) {
-            this.btnAddGroup.addEventListener('click', () => this.handleGroupAction(false));
-        }
+        this.elements.btnAddGroup?.addEventListener('click', () => this.handleGroupAction(false));
+        this.elements.btnMoveGroup?.addEventListener('click', () => this.handleGroupAction(true));
 
-        if (this.btnMoveGroup) {
-            this.btnMoveGroup.addEventListener('click', () => this.handleGroupAction(true));
-        }
-
-        const tabElements = document.querySelectorAll('button[data-bs-toggle="tab"]');
-        tabElements.forEach(tab => {
+        this.elements.tabs.forEach(tab => {
             tab.addEventListener('show.bs.tab', (event) => {
-                if (event.target.id === 'settings-tab') {
-                    this.globalDateFilters.classList.add('d-none');
-                } else {
-                    this.globalDateFilters.classList.remove('d-none');
-                }
+                this.elements.globalDateFilters.classList.toggle('d-none', event.target.id === 'settings-tab');
             });
         });
 
-        if (this.visibilitySwitch) {
-            this.visibilitySwitch.addEventListener('change', async (e) => {
-                const isPublic = e.target.checked;
+        this.elements.visibilitySwitch?.addEventListener('change', async (e) => {
+            const isPublic = e.target.checked;
+            try {
+                const response = await ApiClient.patch('/nodes/bulk-visibility', { 
+                    node_ids: [this.state.currentNodeId],
+                    is_public: isPublic 
+                });
                 
-                try {
-                    const response = await ApiClient.patch('/nodes/bulk-visibility', { 
-                        node_ids: [this.currentNodeId],
-                        is_public: isPublic 
-                    });
-                    
-                    if (!response.ok) throw new Error('Request failed');
-                    
-                    eventBus.publish('nodes:refresh'); 
-                } catch (error) {
-                    e.target.checked = !isPublic; 
-                    alert('Error updating visibility.');
-                    console.error(error);
-                }
-            });
-        }
+                if (!response.ok) throw new Error('Request failed');
+                eventBus.publish('nodes:refresh'); 
+            } catch (error) {
+                e.target.checked = !isPublic; 
+                alert('Error updating visibility.');
+                console.error(error);
+            }
+        });
 
-        if (this.mapBntn) {
-            this.mapBntn.addEventListener('click', () => {
-                if (this.longitude !== null && this.latitude !== null) {
-                    eventBus.publish('map:center-on', { longitude: this.longitude, latitude: this.latitude });
-                    this.modalInstance.hide();
-                } else {
-                    alert('Node location data is not available.');
-                }
-            });
-        }
+        this.elements.mapBtn?.addEventListener('click', () => {
+            if (this.state.longitude !== null && this.state.latitude !== null) {
+                eventBus.publish('map:center-on', { 
+                    longitude: this.state.longitude, 
+                    latitude: this.state.latitude 
+                });
+                this.modalInstance.hide();
+            } else {
+                alert('Node location data is not available.');
+            }
+        });
     }
 
     initDatePickers(defaultStart, defaultEnd) {
@@ -110,25 +109,12 @@ export class ManageController {
             allowInput: false
         };
 
-        this.fpStart = flatpickr(this.startDateInput, {
-            ...config,
-            defaultDate: defaultStart
-        });
-
-        this.fpEnd = flatpickr(this.endDateInput, {
-            ...config,
-            defaultDate: defaultEnd
-        });
-    }
-
-    formatForDatetimeLocal(dateObj) {
-        const d = new Date(dateObj);
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        return d.toISOString().slice(0, 16);
+        this.state.fpStart = flatpickr(this.elements.startDate, { ...config, defaultDate: defaultStart });
+        this.state.fpEnd = flatpickr(this.elements.endDate, { ...config, defaultDate: defaultEnd });
     }
 
     async openManage(nodeId) {
-        this.currentNodeId = nodeId;
+        this.state.currentNodeId = nodeId;
         this.modalInstance.show();
 
         const firstTab = document.querySelector('#nodeManageTabs button[data-bs-target="#chart-pane"]');
@@ -140,32 +126,26 @@ export class ManageController {
         start.setHours(start.getHours() - 24);
 
         this.initDatePickers(start, end);
-        this.canManageNode = await this.loadCanManageStatus();
+        
+        this.state.canManageNode = await this.loadCanManageStatus();
         this.fetchAndRenderData();
-        if (this.canManageNode) {
+        
+        if (this.state.canManageNode) {
             this.loadGroups();
             this.loadCurrentNodeGroups();
         }
     }
 
     async loadCanManageStatus() {
-        console.log('Checking node management rights for node ID:', this.currentNodeId);
         try {
-            const response = await ApiClient.get(`/can-manage-node/${this.currentNodeId}`);
+            const response = await ApiClient.get(`/can-manage-node/${this.state.currentNodeId}`);
             const result = await response.json();
-            const settingsTab = document.getElementById('settings-tab');
-            if(result.data) {
-                settingsTab.classList.remove('d-none');
-            } else {
-                settingsTab.classList.add('d-none');
-            }
-
+            
+            this.elements.settingsTab?.classList.toggle('d-none', !result.data);
             return result.data;
         } catch (error) {
             return false;
         }
-
-        
     }
 
     async loadGroups() {
@@ -173,26 +153,25 @@ export class ManageController {
             const response = await ApiClient.get('/node-groups');
             const groups = await response.json();
             
-            this.groupSelect.innerHTML = '<option value="" selected disabled>Select target group...</option>';
-            groups.forEach(group => {
-                this.groupSelect.innerHTML += `<option value="${group.id}">${group.name}</option>`;
-            });
+            const options = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+            this.elements.groupSelect.innerHTML = `<option value="" selected disabled>Select target group...</option>${options}`;
         } catch (error) {
             console.error(error);
         }
     }
 
     async handleGroupAction(isMove) {
-        const targetGroupId = this.groupSelect.value;
+        const targetGroupId = this.elements.groupSelect.value;
         if (!targetGroupId) return alert("Please select a target group.");
 
         try {
             const response = await ApiClient.post(`/node-groups/${targetGroupId}/nodes`, { 
-                node_ids: [this.currentNodeId],
+                node_ids: [this.state.currentNodeId],
                 is_move: isMove 
             });
             
             if (!response.ok) throw new Error('Request failed');
+            
             alert('Node assigned successfully!');
             this.loadCurrentNodeGroups(); 
         } catch (error) {
@@ -202,36 +181,36 @@ export class ManageController {
     }
 
     async loadCurrentNodeGroups() {
-        this.currentGroupsContainer.innerHTML = '<div class="spinner-border spinner-border-sm text-secondary" role="status"></div>';
+        this.elements.currentGroupsContainer.innerHTML = '<div class="spinner-border spinner-border-sm text-secondary" role="status"></div>';
         
         try {
-            const response = await ApiClient.get(`/nodes/${this.currentNodeId}/groups`);
+            const response = await ApiClient.get(`/nodes/${this.state.currentNodeId}/groups`);
             const groups = await response.json();
 
             if (!response.ok) throw new Error('Failed to load current groups');
 
             if (groups.length === 0) {
-                this.currentGroupsContainer.innerHTML = '<span class="badge bg-secondary px-2 py-1">Unassigned</span>';
+                this.elements.currentGroupsContainer.innerHTML = '<span class="badge bg-secondary px-2 py-1">Unassigned</span>';
                 return;
             }
 
-            this.currentGroupsContainer.innerHTML = groups.map(g => 
+            this.elements.currentGroupsContainer.innerHTML = groups.map(g => 
                 `<span class="badge bg-info text-dark px-2 py-1"><i class="bi bi-tag-fill me-1"></i>${g.name}</span>`
             ).join('');
 
         } catch (error) {
-            this.currentGroupsContainer.innerHTML = '<span class="text-danger small">Error loading groups.</span>';
+            this.elements.currentGroupsContainer.innerHTML = '<span class="text-danger small">Error loading groups.</span>';
             console.error(error);
         }
     }
 
     async fetchAndRenderData() {
-        this.showLoading();
-        this.titleElement.textContent = `Loading Node Data...`;
+        this.updateUIState('loading');
+        this.elements.title.textContent = `Loading Node Data...`;
 
         try {
-            const startDate = this.fpStart.selectedDates[0];
-            const endDate = this.fpEnd.selectedDates[0];
+            const startDate = this.state.fpStart.selectedDates[0];
+            const endDate = this.state.fpEnd.selectedDates[0];
 
             if (!startDate || !endDate) {
                 throw new Error("Please select valid start and end dates.");
@@ -242,170 +221,93 @@ export class ManageController {
                 end_date: endDate.toISOString()
             });
 
-            const response = await ApiClient.get(`/nodes/${this.currentNodeId}/telemetry?${params.toString()}`);
+            const response = await ApiClient.get(`/nodes/${this.state.currentNodeId}/telemetry?${params.toString()}`);
             const result = await response.json();
 
             if (!response.ok) throw new Error(result.message || 'Failed to load history.');
 
-            this.titleElement.textContent = `${result.mac_address}`;
-            this.visibilitySwitch.checked = result.is_public;
-            this.longitude = result.longitude;
-            this.latitude = result.latitude;
+            this.elements.title.textContent = result.mac_address;
+            this.elements.visibilitySwitch.checked = result.is_public;
+            this.state.longitude = result.longitude;
+            this.state.latitude = result.latitude;
 
-            const sortedData = result.data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            const sortedData = [...result.data].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             
             this.renderChart(sortedData);
             this.renderTable(sortedData);
-            this.showChart();
+            this.updateUIState('chart');
 
         } catch (error) {
             this.showError(error.message);
-            this.titleElement.textContent = `Error Loading Data`;
+            this.elements.title.textContent = `Error Loading Data`;
         }
     }
 
-    renderChart(telemetryArray) {
-        if (this.chartInstance) {
-            this.chartInstance.destroy();
+    renderChart(sortedData) {
+        if (this.state.chartInstance) {
+            this.state.chartInstance.destroy();
         }
 
-        if (!telemetryArray || telemetryArray.length === 0) {
+        if (!sortedData?.length) {
             this.showError("No telemetry data found for the selected date range.");
             return;
         }
 
-        const sortedData = telemetryArray.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-
-        const labels = sortedData.map(t => {
-            const date = new Date(t.created_at);
-            return `${date.getDate()}/${date.getMonth() + 1} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-        });
-
-        const tempData = sortedData.map(t => t.temperature);
-        const humData = sortedData.map(t => t.humidity);
-        const soilMoistureData = sortedData.map(t => t.soil_moisture);
-        const vbatData = sortedData.map(t => t.vbat);
-        const windSpeedData = sortedData.map(t => t.wind_speed);
-
+        const labels = sortedData.map(t => formatDate(t.created_at));
+        const extractData = (key) => sortedData.map(t => t[key]);
         const ctx = document.getElementById('historyChart').getContext('2d');
         
         Chart.defaults.color = '#a3a3a3';
         Chart.defaults.borderColor = '#333';
 
-        this.chartInstance = new Chart(ctx, {
+        const datasets = [
+            { label: 'Temperature (°C)', data: extractData('temperature'), borderColor: '#ff6384', backgroundColor: 'rgba(255, 99, 132, 0.1)' },
+            { label: 'Wind Speed (m/s)', data: extractData('wind_speed'), borderColor: '#9966ff', backgroundColor: 'rgba(153, 102, 255, 0.1)' },
+            { label: 'Humidity (%)', data: extractData('humidity'), borderColor: '#36a2eb', backgroundColor: 'rgba(54, 162, 235, 0.1)' },
+            { label: 'Soil Moisture (%)', data: extractData('soil_moisture'), borderColor: '#4bc0c0', backgroundColor: 'rgba(75, 192, 192, 0.1)', hidden: true },
+            { label: 'Battery Voltage (V)', data: extractData('vbat'), borderColor: '#ff9f40', backgroundColor: 'rgba(255, 159, 64, 0.1)', hidden: true }
+        ].map(ds => ({ ...ds, tension: 0.4, fill: true, yAxisID: 'y' }));
+
+        this.state.chartInstance = new Chart(ctx, {
             type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Temperature (°C)',
-                        data: tempData,
-                        borderColor: '#ff6384',
-                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Wind Speed (m/s)',
-                        data: windSpeedData,
-                        borderColor: '#9966ff',
-                        backgroundColor: 'rgba(153, 102, 255, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Humidity (%)',
-                        data: humData,
-                        borderColor: '#36a2eb',
-                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Soil Moisture (%)',
-                        data: soilMoistureData,
-                        borderColor: '#4bc0c0',
-                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        yAxisID: 'y',
-                        hidden: true
-                    },
-                    {
-                        label: 'Battery Voltage (V)',
-                        data: vbatData,
-                        borderColor: '#ff9f40',
-                        backgroundColor: 'rgba(255, 159, 64, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        yAxisID: 'y',
-                        hidden: true
-                    }
-                ]
-            },
+            data: { labels, datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
+                interaction: { mode: 'index', intersect: false },
                 scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: { display: true, text: 'Temperature (°C)' }
-                    },
+                    y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Temperature (°C)' } }
                 }
             }
         });
     }
 
-    renderTable(telemetryArray) {
-        if (!telemetryArray || telemetryArray.length === 0) {
-            this.tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-secondary">No data available</td></tr>';
+    renderTable(sortedData) {
+        if (!sortedData?.length) {
+            this.elements.tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-secondary">No data available</td></tr>';
             return;
         }
 
-        const rows = telemetryArray.reverse().map(t => {
-            const date = new Date(t.created_at);
-            const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-            
-            return `
-                <tr>
-                    <td class="text-secondary small">${formattedDate}</td>
-                    <td>${t.temperature ?? '-'}</td>
-                    <td>${t.humidity ?? '-'}</td>
-                    <td>${t.wind_speed ?? '-'}</td>
-                    <td>${t.soil_moisture ?? '-'}</td>
-                    <td>${t.vbat ?? '-'}</td>
-                </tr>
-            `;
-        }).join('');
-
-        this.tableBody.innerHTML = rows;
+        this.elements.tableBody.innerHTML = [...sortedData].reverse().map(t => `
+            <tr>
+                <td class="text-secondary small">${formatDate(t.created_at, true)}</td>
+                <td>${t.temperature ?? '-'}</td>
+                <td>${t.humidity ?? '-'}</td>
+                <td>${t.wind_speed ?? '-'}</td>
+                <td>${t.soil_moisture ?? '-'}</td>
+                <td>${t.vbat ?? '-'}</td>
+            </tr>
+        `).join('');
     }
 
-    showLoading() {
-        this.loadingElement.classList.remove('d-none');
-        this.errorElement.classList.add('d-none');
-        this.chartContainer.classList.add('d-none');
-    }
-
-    showChart() {
-        this.loadingElement.classList.add('d-none');
-        this.errorElement.classList.add('d-none');
-        this.chartContainer.classList.remove('d-none');
+    updateUIState(state) {
+        this.elements.loading.classList.toggle('d-none', state !== 'loading');
+        this.elements.error.classList.toggle('d-none', state !== 'error');
+        this.elements.chartContainer.classList.toggle('d-none', state !== 'chart');
     }
 
     showError(message) {
-        this.loadingElement.classList.add('d-none');
-        this.chartContainer.classList.add('d-none');
-        this.errorElement.textContent = message;
-        this.errorElement.classList.remove('d-none');
+        this.elements.error.textContent = message;
+        this.updateUIState('error');
     }
 }

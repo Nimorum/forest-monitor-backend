@@ -1,165 +1,166 @@
 import { eventBus } from './events';
 import { ApiClient } from './api';
 
+const formatDate = (dateString) => {
+    return dateString ? new Date(dateString).toLocaleString() : 'Never';
+};
 
 export class DashboardController {
     constructor() {
-        this.container = document.getElementById('dashboard-view');
-        this.navItem = document.getElementById('nav-item-dashboard');
-        this.tableBody = document.getElementById('tokens-table-body');
+        this.initDOM();
+        this.initListeners();
+    }
 
-        this.createSection = document.getElementById('create-token-section');
-        this.createForm = document.getElementById('create-token-form');
-        this.errorAlert = document.getElementById('create-token-error');
+    initDOM() {
+        this.elements = {
+            container: document.getElementById('dashboard-view'),
+            navItem: document.getElementById('nav-item-dashboard'),
+            tableBody: document.getElementById('tokens-table-body'),
+            createSection: document.getElementById('create-token-section'),
+            createForm: document.getElementById('create-token-form'),
+            errorAlert: document.getElementById('create-token-error'),
+            tokenNameInput: document.getElementById('token-name'),
+            newTokenAlert: document.getElementById('new-token-alert'),
+            newTokenValue: document.getElementById('new-token-value'),
+            buttons: {
+                toggleNew: document.getElementById('btn-toggle-new-token'),
+                cancelToken: document.getElementById('btn-cancel-token'),
+                submitToken: document.getElementById('btn-submit-token'),
+                closeAlert: document.getElementById('btn-close-token-alert'),
+                copyToken: document.getElementById('btn-copy-token')
+            }
+        };
+    }
 
-        // Listen for view changes
+    initListeners() {
         eventBus.subscribe('view:changed', (viewName) => this.handleViewChange(viewName));
 
-        this.initializeListeners();
-    }
-    initializeListeners() {
+        this.elements.buttons.toggleNew?.addEventListener('click', () => {
+            const isHidden = this.elements.createSection.classList.toggle('d-none');
+            if (!isHidden) this.elements.tokenNameInput?.focus();
+        });
 
-        const toggleBtn = document.getElementById('btn-toggle-new-token');
-        const cancelBtn = document.getElementById('btn-cancel-token');
+        this.elements.buttons.cancelToken?.addEventListener('click', () => {
+            this.elements.createSection.classList.add('d-none');
+            this.elements.createForm?.reset();
+            this.elements.errorAlert?.classList.add('d-none');
+        });
 
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => {
-                this.createSection.classList.toggle('d-none');
-                if (!this.createSection.classList.contains('d-none')) {
-                    document.getElementById('token-name').focus();
-                }
-            });
-        }
+        this.elements.createForm?.addEventListener('submit', (e) => this.createNewToken(e));
 
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', () => {
-                this.createSection.classList.add('d-none');
-                this.createForm.reset();
-                this.errorAlert.classList.add('d-none');
-            });
-        }
+        this.elements.buttons.closeAlert?.addEventListener('click', () => {
+            this.elements.newTokenAlert?.classList.add('d-none');
+            if (this.elements.newTokenValue) this.elements.newTokenValue.value = '';
+        });
 
-        if (this.createForm) {
-            this.createForm.addEventListener('submit', (e) => this.createNewToken(e));
-        }
+        this.elements.buttons.copyToken?.addEventListener('click', async () => {
+            const { newTokenValue, buttons } = this.elements;
+            if (!newTokenValue || !buttons.copyToken) return;
 
-        const closeAlertBtn = document.getElementById('btn-close-token-alert');
-        if (closeAlertBtn) {
-            closeAlertBtn.addEventListener('click', () => {
-                document.getElementById('new-token-alert').classList.add('d-none');
-                document.getElementById('new-token-value').value = '';
-            });
-        }
-
-        const copyBtn = document.getElementById('btn-copy-token');
-        if (copyBtn) {
-            copyBtn.addEventListener('click', () => {
-                const tokenInput = document.getElementById('new-token-value');
-                tokenInput.select();
+            try {
+                // Use modern Clipboard API
+                await navigator.clipboard.writeText(newTokenValue.value);
+                buttons.copyToken.textContent = 'Copied!';
+            } catch (err) {
+                // Fallback for older browser constraints
+                newTokenValue.select();
                 document.execCommand('copy');
-                
-                copyBtn.textContent = 'Copied!';
-                setTimeout(() => {
-                    copyBtn.textContent = 'Copy';
-                }, 2000);
-            });
-        }
+                buttons.copyToken.textContent = 'Copied!';
+            }
 
-        // Delegate delete button clicks to the table body
-        this.tableBody.addEventListener('click', (e) => {
+            setTimeout(() => {
+                buttons.copyToken.textContent = 'Copy';
+            }, 2000);
+        });
+
+        this.elements.tableBody?.addEventListener('click', (e) => {
             if (e.target.classList.contains('btn-delete-token')) {
-                const tokenId = e.target.getAttribute('data-id');
-                this.deleteToken(tokenId);
+                this.deleteToken(e.target.dataset.id);
             }
         });
     }
 
-    createNewToken(e) {
+    async createNewToken(e) {
         e.preventDefault();
-        this.errorAlert.classList.add('d-none');
-        this.errorAlert.classList.add('d-none');
-        const submitBtn = document.getElementById('btn-submit-token');
+        this.elements.errorAlert?.classList.add('d-none');
+
+        const submitBtn = this.elements.buttons.submitToken;
         const originalText = submitBtn.textContent;
+        
         submitBtn.textContent = 'Generating...';
         submitBtn.disabled = true;
 
-        const name = document.getElementById('token-name').value;
+        try {
+            const name = this.elements.tokenNameInput?.value;
+            const response = await ApiClient.post('/create-gateway-token', { token_name: name });
+            const data = await response.json();
 
-        ApiClient.post('/create-gateway-token', { token_name: name })
-            .then(response => response.json())
-            .then(data => {
-                if (data.token) {
-                    document.getElementById('new-token-value').value = data.token;
-                    document.getElementById('new-token-alert').classList.remove('d-none');
-                    submitBtn.textContent = originalText;
-                    submitBtn.disabled = false;
-                    this.createSection.classList.add('d-none');
-                    this.createForm.reset();
-                    this.loadData();
-                } else {
-                    throw new Error(data.message || 'Failed to create token.');
-                }
-            })
-            .catch(error => {
-                alert(error.message);
-            });
+            if (!data.token) {
+                throw new Error(data.message || 'Failed to create token.');
+            }
+
+            this.elements.newTokenValue.value = data.token;
+            this.elements.newTokenAlert.classList.remove('d-none');
+            this.elements.createSection.classList.add('d-none');
+            this.elements.createForm.reset();
+            
+            await this.loadData();
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
     }
 
-    deleteToken(tokenId) {
-        if (confirm('Are you sure you want to revoke this token?')) {
-            ApiClient.delete(`/tokens/${tokenId}`)
-                .then(() => {
-                    alert('Token revoked successfully.');
-                    this.loadData();
-                })
-                .catch(() => alert('Failed to revoke token.'));
+    async deleteToken(tokenId) {
+        if (!confirm('Are you sure you want to revoke this token?')) return;
+
+        try {
+            await ApiClient.delete(`/tokens/${tokenId}`);
+            alert('Token revoked successfully.');
+            this.loadData();
+        } catch {
+            alert('Failed to revoke token.');
         }
     }
 
     handleViewChange(viewName) {
-        if (viewName === 'dashboard') {
-            this.container.classList.remove('d-none');
-            this.navItem.classList.add('active');
+        const isDashboard = viewName === 'dashboard';
+        this.elements.container?.classList.toggle('d-none', !isDashboard);
+        this.elements.navItem?.classList.toggle('active', isDashboard);
+
+        if (isDashboard) {
             this.loadData();
-        } else {
-            this.container.classList.add('d-none');
-            this.navItem.classList.remove('active');
         }
     }
 
-    loadData() {
-        ApiClient.get('/tokens')
-            .then(response => response.json())
-            .then(data => {
-                console.log('Tokens data:', data);
-                this.renderTable(data.tokens);
-            });
+    async loadData() {
+        try {
+            const response = await ApiClient.get('/tokens');
+            const data = await response.json();
+            this.renderTable(data.tokens);
+        } catch (error) {
+            console.error('Failed to load tokens:', error);
+            this.renderTable([]);
+        }
     }
 
     renderTable(tokens) {
-        if (!tokens || tokens.length === 0) {
-            this.tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-3">No active tokens found.</td></tr>';
+        if (!tokens?.length) {
+            this.elements.tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-3">No active tokens found.</td></tr>';
             return;
         }
 
-        this.tableBody.innerHTML = '';
-
-        tokens.forEach(token => {
-            const tr = document.createElement('tr');
-
-            const lastUsed = token.last_used_at ? new Date(token.last_used_at).toLocaleString() : 'Never';
-            const createdAt = new Date(token.created_at).toLocaleString();
-
-            tr.innerHTML = `
+        this.elements.tableBody.innerHTML = tokens.map(token => `
+            <tr>
                 <td>${token.name}</td>
-                <td>${createdAt}</td>
-                <td>${lastUsed}</td>
+                <td>${formatDate(token.created_at)}</td>
+                <td>${formatDate(token.last_used_at)}</td>
                 <td class="text-end">
                     <button class="btn btn-sm btn-danger btn-delete-token" data-id="${token.id}">Revoke</button>
                 </td>
-            `;
-
-            this.tableBody.appendChild(tr);
-        });
+            </tr>
+        `).join('');
     }
 }
