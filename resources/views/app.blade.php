@@ -19,6 +19,7 @@
         @include('partials.dashboard')
         @include('partials.modals')
         @include('partials.manage-modal')
+        @include('partials.group-telemetry-modal')
         @include('partials.nodes')
         @include('partials.alarms')
 

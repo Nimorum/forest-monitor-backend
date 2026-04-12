@@ -12,6 +12,7 @@ export class NodesController {
         this.noNodesState = document.getElementById('no-nodes-message');
         
         this.refreshBtn = document.getElementById('btn-refresh-nodes');
+        this.avgBnt = document.getElementById('btn-bulk-avg');
 
         this.initListeners();
     }
@@ -154,6 +155,14 @@ export class NodesController {
             btnBulkPrivate.addEventListener('click', async () => this.handleVisibilityChange(false));
         }
 
+        const btnBulkAvg = document.getElementById('btn-bulk-avg');
+        if (btnBulkAvg) {
+            btnBulkAvg.addEventListener('click', () => {
+                const selectedIds = Array.from(document.querySelectorAll('.node-checkbox:checked')).map(cb => cb.value);
+                eventBus.publish('node:group-history:requested', selectedIds);
+            });
+        }
+
     }
 
     async handleVisibilityChange(isPublic) {
@@ -250,12 +259,14 @@ export class NodesController {
         const btnDelete = document.getElementById('btn-bulk-delete');
         const btnPublic = document.getElementById('btn-bulk-public');
         const btnPrivate = document.getElementById('btn-bulk-private');
+        const btnAvg = document.getElementById('btn-bulk-avg');
 
         if (btnAdd) btnAdd.disabled = disableBulk;
         if (btnMove) btnMove.disabled = disableBulk;
         if (btnDelete) btnDelete.disabled = disableBulk;
         if (btnPublic) btnPublic.disabled = disableBulk;
         if (btnPrivate) btnPrivate.disabled = disableBulk;
+        if (btnAvg) btnAvg.disabled = disableBulk;
     }
 
     renderNodes(groupedNodes) {

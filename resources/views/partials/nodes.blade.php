@@ -30,6 +30,12 @@
                     <i class="bi bi-eye-slash"></i> Private
                 </button>
             </div>
+
+            <div class="btn-group me-2" role="group">
+                <button class="btn btn-sm btn-info" id="btn-bulk-avg" disabled title="View Average Telemetry">
+                    <i class="bi bi-files"></i> Avg Telemetry
+                </button>
+            </div>
             
             <select class="form-select form-select-sm bg-dark text-light border-secondary" id="bulk-move-select" style="width: auto;">
                 <option value="" selected disabled>Target group...</option>

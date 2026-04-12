@@ -7,6 +7,7 @@ import { NavbarController } from './navbar';
 import { ManageController } from './manage';
 import { AlarmController } from './alarms';
 import { NodesController } from './nodes';
+import { GroupTelemetryController } from './group-telemetry';
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize our controllers (they will automatically subscribe to events)
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     new AuthController();
     new AlarmController();
     new NodesController();
+    new GroupTelemetryController();
 
     // 2. Set initial view  
     eventBus.publish('view:changed', 'map');

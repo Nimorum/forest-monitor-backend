@@ -12,7 +12,7 @@ export class GroupTelemetryController {
         this.errorElement = document.getElementById('group-history-error');
         this.chartContainer = document.getElementById('group-chart-container');
         this.tableBody = document.getElementById('group-telemetry-table-body');
-        
+
         this.startDateInput = document.getElementById('group-history-start');
         this.endDateInput = document.getElementById('group-history-end');
         this.updateBtn = document.getElementById('btn-group-update-history');
@@ -21,7 +21,6 @@ export class GroupTelemetryController {
         this.chartInstance = null;
         this.fpStart = null;
         this.fpEnd = null;
-
         this.initListeners();
     }
 
@@ -111,7 +110,7 @@ export class GroupTelemetryController {
 
             this.titleElement.textContent = `Group Telemetry (${this.currentGroupIds.length} nodes)`;
 
-            const sortedData = result.data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            const sortedData = result.data.sort((a, b) => new Date(a.hour) - new Date(b.hour));
             
             this.renderChart(sortedData);
             this.renderTable(sortedData);
@@ -133,18 +132,18 @@ export class GroupTelemetryController {
             return;
         }
 
-        const sortedData = telemetryArray.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        const sortedData = telemetryArray.sort((a, b) => new Date(a.hour) - new Date(b.hour));
 
         const labels = sortedData.map(t => {
-            const date = new Date(t.created_at);
+            const date = new Date(t.hour);
             return `${date.getDate()}/${date.getMonth() + 1} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
         });
 
-        const tempData = sortedData.map(t => t.avg_temperature);
-        const humData = sortedData.map(t => t.avg_humidity);
-        const soilMoistureData = sortedData.map(t => t.avg_soil_moisture);
-        const vbatData = sortedData.map(t => t.avg_vbat);
-        const windSpeedData = sortedData.map(t => t.avg_wind_speed);
+        const tempData = sortedData.map(t => Math.round(t.avg_temperature * 10) / 10);//
+        const humData = sortedData.map(t => Math.round(t.avg_humidity * 10) / 10);
+        const soilMoistureData = sortedData.map(t => Math.round(t.avg_soil_moisture * 10) / 10);
+        const vbatData = sortedData.map(t => Math.round(t.avg_vbat * 10) / 10);
+        const windSpeedData = sortedData.map(t => Math.round(t.avg_wind_speed * 10) / 10);
 
         const ctx = document.getElementById('group-historyChart').getContext('2d');
         
@@ -231,17 +230,17 @@ export class GroupTelemetryController {
         }
 
         const rows = telemetryArray.reverse().map(t => {
-            const date = new Date(t.created_at);
+            const date = new Date(t.hour);
             const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
             
             return `
                 <tr>
                     <td class="text-secondary small">${formattedDate}</td>
-                    <td>${t.avg_temperature ?? '-'}</td>
-                    <td>${t.avg_humidity ?? '-'}</td>
-                    <td>${t.avg_wind_speed ?? '-'}</td>
-                    <td>${t.avg_soil_moisture ?? '-'}</td>
-                    <td>${t.avg_vbat ?? '-'}</td>
+                    <td>${ Math.round(t.avg_temperature * 10) / 10 ?? '-'}</td>
+                    <td>${ Math.round(t.avg_humidity * 10) / 10 ?? '-'}</td>
+                    <td>${ Math.round(t.avg_wind_speed * 10) / 10 ?? '-'}</td>
+                    <td>${ Math.round(t.avg_soil_moisture * 10) / 10 ?? '-'}</td>
+                    <td>${ Math.round(t.avg_vbat * 10) / 10 ?? '-'}</td>
                 </tr>
             `;
         }).join('');
