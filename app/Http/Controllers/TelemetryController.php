@@ -62,9 +62,12 @@ class TelemetryController extends Controller
         $end = Carbon::parse($request->end_date);
 
         $telemetries = $node->telemetries()
+            ->with('node.soilCalibration')
             ->whereBetween('created_at', [$start, $end])
             ->orderBy('created_at', 'asc')
             ->get([
+                'id',
+                'node_id',
                 'temperature',
                 'humidity',
                 'wind_speed',
@@ -72,6 +75,17 @@ class TelemetryController extends Controller
                 'vbat',
                 'created_at'
             ]);
+
+        $formattedData = $telemetries->map(function ($t) {
+            return [
+                'temperature' => $t->temperature,
+                'humidity' => $t->humidity,
+                'wind_speed' => $t->wind_speed,
+                'soil_moisture' => $t->soil_moisture_percent,
+                'vbat' => $t->vbat,
+                'created_at' => $t->created_at,
+            ];
+        });
 
         return response()->json([
             'node_id' => $node->id,
@@ -84,7 +98,7 @@ class TelemetryController extends Controller
                 'end' => $end->toIso8601String(),
             ],
             'total_records' => $telemetries->count(),
-            'data' => $telemetries
+            'data' => $formattedData
         ]);
     }
 
@@ -111,15 +125,22 @@ class TelemetryController extends Controller
             ]);
         }
 
-        $hourlyData = Telemetry::whereIn('node_id', $nodeIds)
-            ->whereBetween('created_at', [$validated['start_date'], $validated['end_date']])
+        $hourlyData = Telemetry::query()
+            ->join('soil_calibrations as sc', 'telemetries.node_id', '=', 'sc.node_id')
+            ->whereIn('telemetries.node_id', $nodeIds)
+            ->whereBetween('telemetries.created_at', [$validated['start_date'], $validated['end_date']])
             ->selectRaw('
-                DATE_FORMAT(created_at, "%Y-%m-%d %H:00:00") as hour,
-                AVG(temperature) as avg_temperature,
-                AVG(humidity) as avg_humidity,
-                AVG(wind_speed) as avg_wind_speed,
-                AVG(soil_moisture) as avg_soil_moisture,
-                AVG(vbat) as avg_vbat
+                DATE_FORMAT(telemetries.created_at, "%Y-%m-%d %H:00:00") as hour,
+                AVG(telemetries.temperature) as avg_temperature,
+                AVG(telemetries.humidity) as avg_humidity,
+                AVG(telemetries.wind_speed) as avg_wind_speed,
+                AVG(
+                    CASE 
+                        WHEN sc.raw_air_value = sc.raw_water_value THEN 0
+                        ELSE GREATEST(0, LEAST(100, ((sc.raw_air_value - telemetries.soil_moisture) / (sc.raw_air_value - sc.raw_water_value)) * 100))
+                    END
+                ) as avg_soil_moisture,
+                AVG(telemetries.vbat) as avg_vbat
             ')
             ->groupBy('hour')
             ->orderBy('hour', 'ASC')

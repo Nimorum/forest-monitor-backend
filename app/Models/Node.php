@@ -36,4 +36,19 @@ class Node extends Model
     {
         return $this->belongsToMany(NodeGroup::class)->withTimestamps();
     }
+    
+    public function soilCalibration()
+    {
+        return $this->hasOne(SoilCalibration::class, 'node_id', 'id');
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($node) {
+            $node->soilCalibration()->create([
+                'raw_air_value' => 3000,
+                'raw_water_value' => 1200,
+            ]);
+        });
+    }
 }

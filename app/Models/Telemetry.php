@@ -18,9 +18,28 @@ class Telemetry extends Model
         'vbat',
     ];
 
-    // Relação: Esta telemetria pertence a 1 Nó
+    protected $appends = ['soil_moisture_percent'];
+
     public function node()
     {
         return $this->belongsTo(Node::class);
+    }
+
+    public function getSoilMoisturePercentAttribute()
+    {
+        if (!$this->raw_soil_moisture || !$this->node || !$this->node->soilCalibration) {
+            return null;
+        }
+
+        $cal = $this->node->soilCalibration;
+        $raw = $this->raw_soil_moisture;
+        $air = $cal->raw_air_value;
+        $water = $cal->raw_water_value;
+
+        if ($air == $water) return 0;
+
+        $percent = (($air - $raw) / ($air - $water)) * 100;
+
+        return max(0, min(100, round($percent, 1)));
     }
 }
