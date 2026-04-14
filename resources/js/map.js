@@ -11,15 +11,36 @@ const COLOR_STOPS = {
 };
 
 // --- Pure Helper Functions ---
-const calculateFireRisk = (temp, hum, wind) => {
-    if (temp === null || hum === null) return 0;
-    
-    let risk = 0;
-    if (temp > 30) risk += 0.5; else if (temp > 25) risk += 0.3;
-    if (hum < 30) risk += 0.4; else if (hum < 50) risk += 0.2;
-    if (wind > 10) risk += 0.1;
-    
-    return Math.min(risk, 1.0);
+const calculateFireRisk = (temp, hum, windKmH, soilMoisture) => {
+    // Retorna 0 se faltarem os sensores críticos
+    if (temp == null || hum == null || soilMoisture == null) return 0;
+
+    // 1. Calcular o VPD (Vapor Pressure Deficit) em kPa
+    // Fórmula de Tetens para Pressão de Vapor de Saturação
+    const svp = 0.6108 * Math.exp((17.27 * temp) / (temp + 237.3));
+    const vpd = svp * (1 - (hum / 100));
+
+    // Normalizar o VPD (Valores acima de 4.0 kPa são condições extremas de seca atmosférica)
+    let vpdFactor = Math.min(vpd / 4.0, 1.0);
+
+    // 2. Fator de Combustível Pesado (Humidade do Solo)
+    // Solo a 100% = fator 0. Solo a 0% = fator 1.
+    const soilFactor = Math.max(0, (100 - soilMoisture) / 100);
+
+    // 3. Risco Base de Ignição
+    // Damos 60% de peso ao ar (seca imediata a combustíveis finos)
+    // e 40% ao solo (seca a longo prazo/combustíveis pesados)
+    const baseRisk = (0.6 * vpdFactor) + (0.4 * soilFactor);
+
+    // 4. Multiplicador de Propagação (Vento)
+    // Vento acelera o fogo de forma não-linear.
+    // Vento a 0 km/h = x1. Vento a ~35 km/h = duplica o risco (x2).
+    const windMultiplier = 1 + Math.pow(Math.max(0, windKmH) / 35, 1.2);
+
+    // 5. Aplicar o multiplicador e garantir que não passa de 1.0 (100%)
+    const finalRisk = baseRisk * windMultiplier;
+
+    return Math.min(finalRisk, 1.0);
 };
 
 const interpolateColor = (val, mode) => {
@@ -27,7 +48,7 @@ const interpolateColor = (val, mode) => {
     if (!stops) return [255, 255, 255];
 
     if (val <= stops[0].v) return stops[0].c;
-    
+
     const lastStop = stops[stops.length - 1];
     if (val >= lastStop.v) return lastStop.c;
 
@@ -37,7 +58,7 @@ const interpolateColor = (val, mode) => {
             const percent = (val - stops[i].v) / range;
             const c1 = stops[i].c;
             const c2 = stops[i+1].c;
-            
+
             return c1.map((c, idx) => Math.round(c + (c2[idx] - c) * percent));
         }
     }
@@ -69,7 +90,7 @@ const IDWCanvasLayer = L.Layer.extend({
     },
     _redraw: function () {
         if (!this._map) return;
-        
+
         const size = this._map.getSize();
         this._canvas.width = size.x;
         this._canvas.height = size.y;
@@ -108,7 +129,7 @@ export class MapController {
 
     initListeners() {
         eventBus.subscribe('view:changed', (viewName) => this.handleViewChange(viewName));
-        
+
         eventBus.subscribe('map:center-on', (data) => {
             if (this.state.mapInstance) {
                 this.elements.container.parentElement.classList.remove('d-none');
@@ -152,7 +173,7 @@ export class MapController {
         this.state.markerLayer = L.layerGroup().addTo(this.state.mapInstance);
 
         this.state.mapInstance.on('moveend', () => this.fetchNodesInView());
-        
+
         this.fetchNodesInView();
     }
 
@@ -181,7 +202,7 @@ export class MapController {
 
     drawPixelsOnCanvas(ctx, width, height) {
         ctx.clearRect(0, 0, width, height);
-        
+
         const mode = this.elements.layerSelect?.value;
         if (!mode || mode === 'none' || this.state.currentFeatures.length === 0) return;
 
@@ -192,7 +213,7 @@ export class MapController {
         const centerPt = map.latLngToContainerPoint(center);
         const testPt = L.point(centerPt.x + 100, centerPt.y);
         const testLatLng = map.containerPointToLatLng(testPt);
-        
+
         const metersPer100Px = center.distanceTo(testLatLng);
         const pixelsPerMeter = 100 / metersPer100Px;
 
@@ -209,7 +230,7 @@ export class MapController {
                 temperature: props.temperature || 0,
                 humidity: props.humidity || 0,
                 wind: props.wind_speed || 0,
-                risk: calculateFireRisk(props.temperature, props.humidity, props.wind_speed)
+                risk: calculateFireRisk(props.temperature, props.humidity, props.wind_speed, props.soil_moisture)
             };
 
             return { x: pt.x, y: pt.y, value: values[mode] || 0 };
@@ -224,10 +245,10 @@ export class MapController {
                     const dist = Math.hypot(p.x - x, p.y - y);
                     if (dist < minDist) minDist = dist;
 
-                    if (dist < 1) { 
-                        num = p.value; 
-                        den = 1; 
-                        break; 
+                    if (dist < 1) {
+                        num = p.value;
+                        den = 1;
+                        break;
                     }
 
                     const weight = 1 / (dist * dist);
@@ -253,7 +274,7 @@ export class MapController {
 
     renderMarkers() {
         this.state.markerLayer.clearLayers();
-        
+
         this.state.currentFeatures.forEach(feature => {
             const props = feature.properties;
             const [lng, lat] = feature.geometry.coordinates;
@@ -284,7 +305,7 @@ export class MapController {
                 <div class="text-dark p-1" style="min-width: 150px;">
                     <h6 class="mb-1 fw-bold border-bottom pb-1">${props.mac_address}</h6>
                     <span class="badge ${statusClass.split(' ')[0]} mb-2 w-100">${statusText}</span>
-                    
+
                     ${props.temperature != null ? `
                         <div class="small d-flex justify-content-between mb-1">
                             <span>🌡️ Temp:</span> <strong>${props.temperature}°C</strong>

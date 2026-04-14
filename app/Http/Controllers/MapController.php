@@ -36,7 +36,7 @@ class MapController extends Controller
                 'geometry' => [
                     'type' => 'Point',
                     // GeoJSON inverte a ordem! É sempre [Longitude, Latitude]
-                    'coordinates' => [(float)$node->longitude, (float)$node->latitude] 
+                    'coordinates' => [(float)$node->longitude, (float)$node->latitude]
                 ],
                 'properties' => [
                     'node_id' => $node->id,
@@ -44,7 +44,7 @@ class MapController extends Controller
                     'temperature' => $node->latestTelemetry ? $node->latestTelemetry->temperature : null,
                     'wind_speed' => $node->latestTelemetry ? $node->latestTelemetry->wind_speed : null,
                     'humidity' => $node->latestTelemetry ? $node->latestTelemetry->humidity : null,
-                    'soil_moisture' => $node->latestTelemetry ? $node->latestTelemetry->soil_moisture : null,
+                    'soil_moisture' => $node->latestTelemetry ? $node->latestTelemetry->soil_moisture_percent : null,
                     'vbat' => $node->latestTelemetry ? $node->latestTelemetry->vbat : null,
                     'last_update' => $node->latestTelemetry ? $node->latestTelemetry->created_at->toIso8601String() : null,
                 ]
@@ -61,7 +61,7 @@ class MapController extends Controller
     {
         $request->validate([
             'node_ids' => 'required|array',
-            'node_ids.*' => 'integer|exists:nodes,id', 
+            'node_ids.*' => 'integer|exists:nodes,id',
             'target_time' => 'required|date',
         ]);
 
