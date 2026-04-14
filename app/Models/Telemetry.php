@@ -27,12 +27,12 @@ class Telemetry extends Model
 
     public function getSoilMoisturePercentAttribute()
     {
-        if (!$this->raw_soil_moisture || !$this->node || !$this->node->soilCalibration) {
+        if (!$this->soil_moisture || !$this->node || !$this->node->soilCalibration) {
             return null;
         }
 
         $cal = $this->node->soilCalibration;
-        $raw = $this->raw_soil_moisture;
+        $raw = $this->soil_moisture;
         $air = $cal->raw_air_value;
         $water = $cal->raw_water_value;
 
