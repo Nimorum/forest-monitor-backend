@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Node;
 use App\Models\NodeGroup;
+use App\Jobs\SendNodeRegistrationEmail;
 
 class NodeController extends Controller
 {
@@ -25,6 +26,8 @@ class NodeController extends Controller
                 'longitude' => $validated['longitude'] ?? null,
             ]
         );
+
+        SendNodeRegistrationEmail::dispatch($node);
 
         return response()->json([
             'message' => 'Node registered successfully!',
