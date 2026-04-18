@@ -18,10 +18,17 @@ class NodeController extends Controller
             'longitude' => 'nullable|numeric',
         ]);
 
+        $currentUser = $request->user();
+        $existingNode = Node::where('mac_address', $validated['mac_address'])->first();
+
+        if ($existingNode) {
+            $existingNode->groups()->detach();
+        }
+
         $node = Node::updateOrCreate(
             ['mac_address' => $validated['mac_address']],
             [
-                'user_id' => $request->user()->id,
+                'user_id' => $currentUser->id,
                 'latitude' => $validated['latitude'] ?? null,
                 'longitude' => $validated['longitude'] ?? null,
             ]
@@ -91,7 +98,7 @@ class NodeController extends Controller
 
         return response()->json([
             'message' => 'Nodes retrieved and grouped successfully.',
-            'data' => $groupedData 
+            'data' => $groupedData
         ]);
     }
 
@@ -152,4 +159,4 @@ class NodeController extends Controller
         return ['data' => $node->user_id === Auth::id()];
     }
 
-}    
+}
