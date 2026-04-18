@@ -7,12 +7,12 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Node;
 use Carbon\Carbon;
 use App\Models\Telemetry;
+use Illuminate\Support\Facades\Log;
 
 class TelemetryController extends Controller
 {
     public function logData(Request $request)
     {
-
         $validated = $request->validate([
             'mac_address' => 'required|string|exists:nodes,mac_address',
             'temperature' => 'nullable|numeric',
@@ -20,7 +20,7 @@ class TelemetryController extends Controller
             'wind_speed' => 'nullable|numeric',
             'soil_moisture' => 'nullable|numeric',
             'battery_voltage' => 'nullable|numeric',
-            'collected_at' => 'nullable|date',
+            'collected_at' => 'nullable|integer',
         ]);
 
         $node = Node::where('mac_address', $validated['mac_address'])->first();
@@ -31,7 +31,9 @@ class TelemetryController extends Controller
             'wind_speed' => $validated['wind_speed'] ?? null,
             'soil_moisture' => $validated['soil_moisture'] ?? null,
             'vbat' => $validated['battery_voltage'] ?? null,
-            'created_at' => $validated['collected_at'] ?? Carbon::now(),
+            'created_at' => isset($validated['collected_at'])
+            ? Carbon::createFromTimestamp($validated['collected_at'])
+            : Carbon::now(),
         ]);
 
         return response()->json([
@@ -135,7 +137,7 @@ class TelemetryController extends Controller
                 AVG(telemetries.humidity) as avg_humidity,
                 AVG(telemetries.wind_speed) as avg_wind_speed,
                 AVG(
-                    CASE 
+                    CASE
                         WHEN sc.raw_air_value = sc.raw_water_value THEN 0
                         ELSE GREATEST(0, LEAST(100, ((sc.raw_air_value - telemetries.soil_moisture) / (sc.raw_air_value - sc.raw_water_value)) * 100))
                     END
