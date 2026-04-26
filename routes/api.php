@@ -49,6 +49,8 @@ Route::middleware(['auth:sanctum', 'ability:dashboard'])->group(function () {
     Route::post('/average-telemetry', [TelemetryController::class, 'getAverageTelemetry']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::patch('/user/alert-email', [AuthController::class, 'toggleAlertEmail']);
+    Route::get('/user/alert-email', [AuthController::class, 'getAlertEmail']);
     Route::get('/user', function (Request $request) {
         return $request->user();
     });

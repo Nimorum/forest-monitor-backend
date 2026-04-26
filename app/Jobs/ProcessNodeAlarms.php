@@ -20,9 +20,8 @@ class ProcessNodeAlarms implements ShouldQueue
     {
         $startOfHour = Carbon::now()->subHour()->startOfHour();
         $endOfHour = Carbon::now()->subHour()->endOfHour();
-        
+
         $users = User::with('nodes')->get();
-        $shouldSendEmail = env('SEND_ALARM_EMAIL', false);
 
         foreach ($users as $user) {
             $alarmsReport = [];
@@ -63,7 +62,7 @@ class ProcessNodeAlarms implements ShouldQueue
                 }
             }
 
-            if ($shouldSendEmail && count($alarmsReport) > 0) {
+            if ($user->alert_email && count($alarmsReport) > 0) {
                 SendUserAlarmsEmail::dispatch($user, $alarmsReport);
             }
         }
@@ -93,7 +92,7 @@ class ProcessNodeAlarms implements ShouldQueue
         $alarm = Alarm::firstOrCreate([
             'node_id' => $node->id,
             'type' => 'fire_risk',
-            'created_at' => $referenceTime->copy()->startOfHour(), 
+            'created_at' => $referenceTime->copy()->startOfHour(),
         ], [
             'user_id' => $node->user_id,
             'message' => "High fire risk: Temp :{$telemetry->temperature}°C, Hum:{$telemetry->humidity}% wind: {$telemetry->wind_speed}km/h soil: {$telemetry->soil_moisture}% Risk: " . round($risk * 100) . "%",
@@ -105,14 +104,14 @@ class ProcessNodeAlarms implements ShouldQueue
     private function calculateFireRisk($temp, $hum, $windKmH, $soilMoisture): float
     {
         if ($temp === null || $hum === null || $soilMoisture === null) return 0;
-        
+
         $svp = 0.6108 * exp((17.27 * $temp) / ($temp + 237.3));
         $vpd = $svp * (1 - ($hum / 100));
         $vpdFactor = min($vpd / 4.0, 1.0);
         $soilFactor = max(0, (100 - $soilMoisture) / 100);
         $baseRisk = (0.6 * $vpdFactor) + (0.4 * $soilFactor);
         $windMultiplier = 1 + pow(max(0, $windKmH) / 35, 1.2);
-        
+
         return min($baseRisk * $windMultiplier, 1.0);
     }
 }
