@@ -25,6 +25,13 @@ class TelemetryController extends Controller
 
         $node = Node::where('mac_address', $validated['mac_address'])->first();
 
+        $currentUser = $request->user();
+        if ($node->user_id !== $currentUser->id) {
+            return response()->json([
+                'message' => 'You do not have permission to log data for this node.'
+            ], 403);
+        }
+
         $telemetry = $node->telemetries()->create([
             'temperature' => $validated['temperature'] ?? null,
             'humidity' => $validated['humidity'] ?? null,
