@@ -38,7 +38,7 @@ class TelemetrySeeder extends Seeder
         $seededCount = 0;
 
         foreach ($nodes as $node) {
-            if ($node->mac_address == '3C:0F:02:ED:C5:10') {
+            if ($node->mac_address == '3C:0F:02:ED:C5:10' || $node->mac_address == '3C:0F:02:EE:78:60') {
                 continue;
             }
 
