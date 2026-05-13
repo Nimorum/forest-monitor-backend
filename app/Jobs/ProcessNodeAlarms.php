@@ -39,7 +39,8 @@ class ProcessNodeAlarms implements ShouldQueue
                     }
                 }
 
-                $telemetries = Telemetry::where('node_id', $node->id)
+                $telemetries = Telemetry::with('node.soilCalibration')
+                    ->where('node_id', $node->id)
                     ->whereBetween('created_at', [$startOfHour, $endOfHour])
                     ->get();
 
@@ -47,7 +48,7 @@ class ProcessNodeAlarms implements ShouldQueue
                 $worstTelemetry = null;
 
                 foreach ($telemetries as $t) {
-                    $risk = $this->calculateFireRisk($t->temperature, $t->humidity, $t->wind_speed, $t->soil_moisture);
+                    $risk = $this->calculateFireRisk($t->temperature, $t->humidity, $t->wind_speed, $t->soil_moisture_percent);
                     if ($risk > $maxRiskValue) {
                         $maxRiskValue = $risk;
                         $worstTelemetry = $t;
@@ -95,7 +96,7 @@ class ProcessNodeAlarms implements ShouldQueue
             'created_at' => $referenceTime->copy()->startOfHour(),
         ], [
             'user_id' => $node->user_id,
-            'message' => "High fire risk: Temp :{$telemetry->temperature}°C, Hum:{$telemetry->humidity}% wind: {$telemetry->wind_speed}km/h soil: {$telemetry->soil_moisture}% Risk: " . round($risk * 100) . "%",
+            'message' => "High fire risk: Temp :{$telemetry->temperature}°C, Hum:{$telemetry->humidity}% wind: {$telemetry->wind_speed}km/h soil: {$telemetry->soil_moisture_percent}% Risk: " . round($risk * 100) . "%",
         ]);
 
         return $alarm->wasRecentlyCreated ? $alarm : null;
