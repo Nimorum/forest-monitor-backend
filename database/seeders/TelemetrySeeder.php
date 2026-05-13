@@ -22,14 +22,17 @@ class TelemetrySeeder extends Seeder
             // Verão: Quente e Seco
             $minTemp = 20.0; $maxTemp = 40.0;
             $minHum = 20.0;  $maxHum = 50.0;
+            $maxWind = 40.0;
         } elseif ($month == 12 || $month <= 3) {
             // Inverno: Frio e Húmido
             $minTemp = 5.0;  $maxTemp = 18.0;
             $minHum = 60.0;  $maxHum = 95.0;
+            $maxWind = 100.0;
         } else {
             // Primavera/Outono: Ameno
             $minTemp = 12.0; $maxTemp = 25.0;
             $minHum = 40.0;  $maxHum = 75.0;
+            $maxWind = 40.0;
         }
 
         $seededCount = 0;
@@ -74,7 +77,7 @@ class TelemetrySeeder extends Seeder
 
             $newTemp = max($minTemp, min($maxTemp, $newTemp));
             $newHum  = max($minHum, min($maxHum, $newHum));
-            $newWind = max(0, $newWind);
+            $newWind = max(0, min($maxWind, $newWind));
             $newSoil = max($minRaw, min($maxRaw, $newSoil));
 
             $node->telemetries()->create([
