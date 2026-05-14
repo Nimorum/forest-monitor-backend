@@ -144,4 +144,28 @@ class AuthController extends Controller
             ? response()->json(['message' => 'Password alterada com sucesso.'])
             : response()->json(['message' => 'Erro ao alterar password.'], 400);
     }
+
+    public function toggleAlertEmail(Request $request)
+    {
+        $request->validate([
+            'alert_email' => 'required|boolean',
+        ]);
+
+        $user = $request->user();
+        $user->alert_email = $request->alert_email;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Alert email preference updated successfully.',
+            'alert_email' => $user->alert_email
+        ]);
+    }
+
+    public function getAlertEmail(Request $request){
+        $user = $request->user();
+
+        return response()->json([
+            "alert_email" => $user->alert_email
+        ]);
+    }
 }

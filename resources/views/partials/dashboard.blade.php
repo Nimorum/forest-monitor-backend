@@ -1,5 +1,12 @@
 <div id="dashboard-view" class="container py-4 d-none h-100 overflow-auto">
 
+    <div class="card bg-dark text-light border-secondary mb-4 p-3">
+        <div class="form-check form-switch fs-5">
+            <input class="form-check-input" type="checkbox" role="switch" id="alert-email-switch">
+            <label class="form-check-label" for="alert-email-switch">Receive Alerts by Email</label>
+        </div>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>API Tokens</h2>
         <button id="btn-toggle-new-token" class="btn btn-primary">+ New Token</button>

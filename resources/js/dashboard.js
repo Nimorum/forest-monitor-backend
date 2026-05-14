@@ -27,13 +27,18 @@ export class DashboardController {
                 cancelToken: document.getElementById('btn-cancel-token'),
                 submitToken: document.getElementById('btn-submit-token'),
                 closeAlert: document.getElementById('btn-close-token-alert'),
-                copyToken: document.getElementById('btn-copy-token')
+                copyToken: document.getElementById('btn-copy-token'),
+                alertSwitch: document.getElementById('alert-email-switch'),
             }
         };
     }
 
     initListeners() {
         eventBus.subscribe('view:changed', (viewName) => this.handleViewChange(viewName));
+
+        this.elements.buttons.alertSwitch?.addEventListener('change', (e) => {
+            this.updateAlertPreference(e.target.checked);
+        });
 
         this.elements.buttons.toggleNew?.addEventListener('click', () => {
             const isHidden = this.elements.createSection.classList.toggle('d-none');
@@ -58,11 +63,9 @@ export class DashboardController {
             if (!newTokenValue || !buttons.copyToken) return;
 
             try {
-                // Use modern Clipboard API
                 await navigator.clipboard.writeText(newTokenValue.value);
                 buttons.copyToken.textContent = 'Copied!';
             } catch (err) {
-                // Fallback for older browser constraints
                 newTokenValue.select();
                 document.execCommand('copy');
                 buttons.copyToken.textContent = 'Copied!';
@@ -86,7 +89,7 @@ export class DashboardController {
 
         const submitBtn = this.elements.buttons.submitToken;
         const originalText = submitBtn.textContent;
-        
+
         submitBtn.textContent = 'Generating...';
         submitBtn.disabled = true;
 
@@ -103,7 +106,7 @@ export class DashboardController {
             this.elements.newTokenAlert.classList.remove('d-none');
             this.elements.createSection.classList.add('d-none');
             this.elements.createForm.reset();
-            
+
             await this.loadData();
         } catch (error) {
             alert(error.message);
@@ -132,6 +135,7 @@ export class DashboardController {
 
         if (isDashboard) {
             this.loadData();
+            this.loadAlertPreference();
         }
     }
 
@@ -143,6 +147,27 @@ export class DashboardController {
         } catch (error) {
             console.error('Failed to load tokens:', error);
             this.renderTable([]);
+        }
+    }
+
+    async loadAlertPreference() {
+        try {
+            const response = await ApiClient.get('/user/alert-email');
+            const data = await response.json();
+            if (this.elements.buttons.alertSwitch) {
+                this.elements.buttons.alertSwitch.checked = Boolean(data.alert_email);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async updateAlertPreference(isChecked) {
+        try {
+            const response = await ApiClient.patch('/user/alert-email', { alert_email: isChecked });
+            this.elements.alertSwitch = isChecked;
+        } catch (error) {
+            alert('Failed to update email preference.');
         }
     }
 
